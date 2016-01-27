@@ -1,0 +1,1331 @@
+
+/** * Eric Meyer's Reset CSS v2.0 (http://meyerweb.com/eric/tools/css/reset/) * http://cssreset.com */
+
+html, body, div, span, applet, object, iframe,h1, h2, h3, h4, h5, h6, p, blockquote, pre,a, abbr, acronym, address, big, cite, code,del, dfn, em, img, ins, kbd, q, s, samp,small, strike, strong, sub, sup, tt, var,b, u, i, center,dl, dt, dd, ol, ul, li,fieldset, form, label, legend,table, caption, tbody, tfoot, thead, tr, th, td,article, aside, canvas, details, embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary,time, mark, audio, video {	margin: 0;	padding: 0;	border: 0;	font-size: 100%;	font: inherit;	vertical-align: baseline;}
+
+/* HTML5 display-role reset for older browsers */
+
+article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section {	display: block;}body {	line-height: 1;}ol, ul {	list-style: none;}blockquote, q {	quotes: none;}blockquote:before, blockquote:after,q:before, q:after {	content: '';	content: none;}table {	border-collapse: collapse;	border-spacing: 0;}
+
+
+
+/*---------- GLOBAL SETTINGS ----------*/
+
+/* removes default padding from jquery css */
+.ui-panel-inner, .ui-panel-wrapper, .ui-content {
+    padding: 0 !important;   
+    margin: 0 !important;
+}
+
+/* defines fonts used */
+@font-face {
+    font-family: dinlight;
+    src: url(../resources/fonts/din_light.ttf) format('truetype');
+}
+
+@font-face {
+    font-family: dinmedium;
+    src: url(../resources/fonts/din_medium.ttf) format('truetype');
+}
+
+@font-face {
+    font-family: dinbold;
+    src: url(../resources/fonts/din_bold.ttf) format('truetype');
+}
+
+@font-face {
+    font-family: dinregular;
+    src: url(../resources/fonts/din_regular.ttf) format('truetype');
+}
+
+/**************************************************************************************************/
+
+/*----------|||||  HOMEPAGE  |||||----------*/
+
+/* defines link colors */
+
+#homepage .content a:link {color:#FFFFFF; text-decoration: none;}      /* unvisited link */
+#homepage .content a:visited {color:#FFFFFF;}  /* visited link */
+#homepage .content a:hover {color:#FFFFFF;}  /* mouse over link */
+#homepage .content a:active {color:#FFFFFF;}  /* selected link */
+
+/*----- BLUE PANEL -----*/
+#sidePanelButton {
+    position: absolute;
+    left: 5px;
+    top: 5px;
+    height: 35px;
+}
+
+#banner {
+    position: relative;
+    background-color: #0D6BA0;
+    height: 193px;
+    color: #FFFFFF;
+    text-align:center;
+}
+
+#homepageAddButton {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    height: 35px;
+}
+
+#feedbackBackButton {
+    position: absolute;
+    left: 9px;
+    top: 9px;
+    height: 25px;
+}
+/*----- DYNAMIC DATE WIDGET -----*/
+#dateBox {
+    font-family: dinlight;
+    font-size: 20pt;
+    padding-top: 30px;
+    margin-left: 30px;
+    margin-right: 30px;
+    margin: auto;
+    width: 70%;
+    text-align: left;
+    vertical-align:middle;
+
+}
+
+#day {
+    font-family: dinmedium;
+    font-size: 32pt;
+}
+
+#totalDate {
+    font-size: 23pt;
+    display: table;
+    margin: auto;
+}
+
+#date {
+    font-family: dinbold;
+    background-color: white;
+    color: #0D6BA0;
+    border-radius:30px;
+    font-size: 0.8em;
+    padding-left: 10px;
+    padding-right: 10px;
+    background-color: #E8E8E8;
+}
+
+/*----- PRIORITY EVENTS -----*/
+.completeSwipeIcon {
+	height: 40px; 
+	margin-left: 10%; 
+	margin-top: 13px;
+}
+
+.deleteSwipeIcon {
+	float: right; 
+	height: 40px; 
+	margin-right: 10%; 
+	margin-top: 13px;
+}
+
+.deleteSwipeContainer {
+	width: 100%; 
+	height: 100%; 
+	position: absolute; 
+	left: -100%; 
+	background-color: #FF465C;
+}
+
+.completeSwipeContainer {
+	width: 100%; 
+	height: 100%; 
+	position: absolute; 
+	right: -100%; 
+	background-color: #39B54A;
+}
+
+.priorityTaskContainer {
+    background-color: #FFFFFF;
+    height: 70px;
+}
+
+.priorityTaskContainer2 {
+}
+
+.priorityTaskIcon {
+    display: inline-block;
+    width: 70px;
+    height: 100%;
+    background-color: #3A3A3A;
+    text-align: center;
+}
+
+.priorityTaskIcon2 {
+    display: inline-block;
+    width: 70px;
+    height: 100%;
+    background-color: #3A3A3A;
+    text-align: center;
+}
+
+.priorityTaskIcon img {
+    height: 25px;
+    padding-top: 22px;
+
+}
+
+.priorityTask {
+    display: inline-block;
+    height: 70px;
+    vertical-align: top;
+    position: relative;
+    width: calc(100% - 80px);
+}
+
+.priorityTask2 {
+    display: inline-block;
+    vertical-align: top;
+    /*width: calc(100% - 80px);*/
+
+}
+
+.outerTaskContainer {
+    vertical-align: top;
+    font-family: dinmedium;
+    position: relative;
+    left: 0;
+}
+
+#extend, #extend2, #extend3, #extend4, #extend5 {
+    height: 100%;
+    background-color: #FFFFFF;
+}
+
+#color1 {
+    background-color: #466DE8;
+}
+
+#color2 {
+    background-color: #524DFF;   
+}
+
+#color3 {
+    background-color: #5AADFF;
+}
+
+#color4 {
+    background-color: #46C2E8;   
+}
+
+#color5 {
+    background-color: #50E2DB;   
+}
+
+#color6 {
+    background-color: #a7a6a6;
+}
+
+.priority-event-title-and-course {
+    height: 70px;
+    vertical-align: middle;
+    margin-left: 8px;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.priority-eventTitle {
+    height: 50%;
+    vertical-align: bottom;
+    padding-bottom: 4px;
+    overflow: hidden;
+    white-space: nowrap;
+    font-size: 11pt;
+}
+
+.textOverflow {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow:ellipsis;
+    width: 90%;
+}
+
+
+.priority-event-time-course-day {
+    height: 50%;   
+    vertical-align: top;
+    font-size: 0.7em;
+    padding-top: 4px;
+    color: #808285;
+}
+
+.priority-task-icon {
+    width: 70px;
+}
+
+.priority-description-and-menu {
+    vertical-align: middle;
+    /*margin-left: 8px;*/
+    width: 100%;
+}
+
+.priority-edit-menu-buttons {
+    width: 5%;
+    min-width: 50px;
+    padding-left: 10px;
+    padding-bottom: 10px;
+}
+
+.priority-description {
+    height: 50%;
+    vertical-align: top;
+    padding-bottom: 10px;
+    overflow: hidden;
+    font-size: 9pt;
+    font-family: dinlight;
+    padding-left: 12px;
+}
+
+.height-limiter {
+    line-height: 1.3em;
+    width: 93%;
+}
+
+.priority-edit-menu img {
+    height: 29px;   
+}
+
+.priority-rank {
+    text-align: right;  
+    vertical-align: top;
+    padding-right: 20px;
+}
+
+.priority-rank img {
+    vertical-align: middle;
+    height: 20px;   
+    padding-top: 2px;
+}
+
+
+/* overriding the text-shadow style */
+.ui-panel-wrapper {
+    text-shadow: 0 0px 0 #ffffff !important;
+}
+
+/**************************************************************************************************/
+
+/*----------|||||  ADD EVENT PAGE  |||||----------*/
+
+/* datepicker button */
+#datepicker{
+}
+
+/* styles the priority field and icon */
+
+#straight-border {
+    background-image: url("resources/images/tw_icon_input_title.png");
+    background-size: 100% 100%;
+    background-color: #E8E8E8;
+    border-bottom: 8px;
+}
+
+/* adds default padding from jquery css */
+#newEvent .ui-panel-inner, .ui-panel-wrapper, #newEvent .ui-content {
+    padding: 16px;   
+    margin: 0;
+}
+
+/*----- BG AND FONT -----*/
+
+#newEvent .ui-content {
+    background-color: #E8E8E8 ;   
+    font-family: dinregular;
+}
+
+/*----- HEADER -----*/
+#addEventHeader {
+    position: relative;
+    background-color: #0D6BA0;
+    height: 45px;
+    max-height: 48px;
+    font-size: 1.2em;
+    font-family: dinlight;
+    color: #FFFFFF;
+    text-align: left;
+    line-height: 48px;
+}
+
+a.addEventHeaderLinks  {
+    color: white;
+    text-decoration: none;
+    text-shadow: 0;
+}
+
+#saveButton {
+    position:absolute;
+    right: 8px;
+    top: 1px;
+}
+.ui-overlay-a, .ui-page-theme-a, .ui-page-theme-a .ui-panel-wrapper{
+    text-shadow: 0;
+    background-color:white; /* sean */
+}
+
+#saveButton a {
+    color: #A4A4A4;
+    font-weight: normal !important;
+
+}
+
+#backButton {
+    padding-left:30px;
+    width: 50px;
+}
+
+#backButton a{
+    color: white;
+}
+
+.white-text {
+    color:white !important;
+}
+
+/*----- FORM -----*/
+
+#inputpage {
+    position: relative;
+    padding: 16px;
+}
+
+
+/*----- ANDROID STYLE INPUT -----*/
+
+#newEvent .ui-content {
+    background-color: white ;   
+    font-family: dinregular;
+}
+
+/* styles blue android line beneath fields */
+
+.android-btm-border-blue {
+    border: 2px solid #0D6Ba0;
+    border-top: 0px;
+    height:5px;
+    width:99%;
+    position: relative;
+    bottom: 8px;
+
+}
+
+/* stars */
+
+#inputStar1 {
+    padding-right: 10px;
+    height: 25px;
+}
+
+#inputStar2 {
+    padding-right: 10px;
+    height: 25px;
+}
+
+#inputStar3 {
+    padding-right: 10px;
+    height: 25px;
+}
+
+.homepageStars {
+    padding-right: 10px;
+}
+/* styles grey android line beneath fields */
+
+.android-btm-border-grey {
+    border: 2px solid #A4A4A4;
+    border-top: 0px;
+    height:5px;
+    width:99%;
+    position: relative;
+    bottom: 8px;
+    margin-bottom: -7px;
+}
+
+/* global input field text styles */
+.blue-clickable-text {
+    font-weight: bold;
+    font-family: dinregular;
+    color: #31b6e7;
+}
+
+.grey-input-text {
+    font-weight: 100;
+    font-family: dinregular;
+}
+
+/* styles the input icons */
+
+.inputicon {
+    height: 16px;
+}
+
+/* styles the priority stars */
+#input-star-container{
+    float:right;
+}
+
+/* adds padding to left of input icon */
+
+.inputicon_div{
+    padding-left: 15px;
+    padding-bottom: 15px;
+    padding-top: 15px;
+}
+
+/* styles the line beneath the priority field */
+
+.priority {
+    border-bottom: 2px solid #A4A4A4;
+    background-color: white;
+}
+
+/* select fields */
+
+.ui-select .ui-btn>span:not(.ui-li-count) {
+    text-align:left;
+    background-color: white;
+}
+
+/*----- POPUP BUTTONS -----*/
+
+#newEvent .ui-content {
+    background-color: white ;   
+    font-family: dinregular;
+}
+
+.poplink div{
+    color: black;
+}
+
+.poplink {
+    margin-bottom:.5em;
+    text-decoration: none;
+}
+
+/* Category icon Circle colours */
+#readingCircle {
+    background-color:red;
+}
+
+/* textfield styling */
+
+.ui-body-a, .ui-page-theme-a .ui-body-inherit, html .ui-bar-a .ui-body-inherit, html .ui-body-a .ui-body-inherit, html body .ui-group-theme-a .ui-body-inherit, html .ui-panel-page-container-a {
+    border: 0px;
+    margin: 0px;
+}
+
+
+#newEvent .ui-input-text input, #newEvent  .ui-input-search input, textarea.ui-input-text, #newEvent  .ui-input-text input, #newEvent .ui-input-search input, #newEvent  .ui-body-a, #newEvent  .ui-page-theme-a .ui-body-inherit, #newEvent  html .ui-bar-a .ui-body-inherit, #newEvent html .ui-body-a .ui-body-inherit,
+#newEvent html body .ui-group-theme-a .ui-body-inherit, #newEvent  html .ui-panel-page-container-a {
+    padding: 0px;
+    border-width: 0px;   
+    border-radius: 0px;
+    margin-bottom: 0px;
+    background-color: white;
+}
+
+/* removes blue highlight when user focuses on field */
+.ui-focus {
+    -moz-box-shadow: none !important;
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
+}
+
+ui-input-text ui-body-inherit ui-corner-all ui-shadow-inset {
+    box-shadow: 0px;
+}
+
+.ui-shadow-inset {
+    -webkit-box-shadow: inset 0 0px 0px rgba(0,0,0,.2);
+    -moz-box-shadow: inset 0 0px 0px rgba(0,0,0,.2);
+    box-shadow: inset 0 0px 0px rgba(0,0,0,.2);
+}
+
+/* textarea */
+
+#details {
+    height: 35px auto !important; /* same as textfield */
+    background-color: inherit;
+    resize:none !important;
+}
+
+/* header */
+
+.ui-header .ui-title, .ui-footer .ui-title {
+    background-color: #0D6BA0;
+    color: white;
+
+}
+
+.ui-bar-a, .ui-page-theme-a .ui-bar-inherit, html .ui-bar-a .ui-bar-inherit, html .ui-body-a .ui-bar-inherit, html body .ui-group-theme-a .ui-bar-inherit {
+    background-color: #0D6BA0;
+    border-color: #ddd;
+    color: #333;
+    text-shadow: 0 0px 0 #eee;
+    font-weight: 700;
+}
+
+/* changes all link colors to default to black */
+
+.ui-page-theme-a a:link, .ui-page-theme-a a:visited, .ui-page-theme-a a:hover, .ui-page-theme-a a:active, .ui-bar-a a:link, .ui-bar-a a:visited, .ui-bar-a a:hover, .ui-bar-a a:active, .ui-body-a a:link, .ui-body-a a:visited, .ui-body-a a:hover, .ui-body-a a:active, .ui-group-theme-a a:link, .ui-group-theme-a a:visited, .ui-group-theme-a a:hover, .ui-group-theme-a a:active {
+    color: black;
+}
+
+/* course popup */
+
+#coursePopupText {
+    padding-bottom: 15px;
+    padding-top: 17px;
+    padding-left: 50px;
+    margin-left: -50px;
+}
+
+#categoryPopupText {
+    padding-bottom: 15px;
+    padding-top: 17px;
+    padding-left: 50px;
+    margin-left: -50px;
+}
+
+#newcoursepop a{
+    border-bottom: 2px solid #A4A4A4;
+}
+
+#course-header{
+    text-align: center;
+    width: 300px;
+    font-family: dinlight;
+    font-size: 1.5em;
+    border-bottom: 2px solid #0D6BA0;
+    padding-bottom: 12px;
+    margin-bottom: 10px;
+    padding-top: 19px;
+    color: #0D6BA0;
+    font-weight: bold;
+}
+
+#course-container-outer {
+    height: 350px;
+    width: 300px;
+    overflow: hidden;
+    background-color: white;
+    box-shadow: 0px 0px 10px 1000px rgba(0,0,0,.6);
+    overflow-x:hidden;
+
+}
+
+#course-container-inner{ 
+    width: 317px;
+    overflow-y: auto;
+    overflow-x:hidden;
+
+    height: 100%;
+}
+
+#courselist{
+    width: 100%;
+    border-bottom: 2px solid #A4A4A4;
+}
+
+#courselist td{
+    padding-bottom: 8px;
+}
+
+.course-option {
+    border-bottom: 2px solid #E8E8E8;
+    color: black;
+    text-align: left;
+    padding-top: 15px;
+
+    padding-bottom: 15px;
+    font-family: dinlight;
+    background-color: white;
+    margin-bottom: 2px;
+    margin-top: 2px;
+    padding-left:20px;
+}
+
+.course-option a div {
+    width: 274px;
+}
+
+.course-icon {
+    width: 32px;
+    border-bottom: 2px solid #E8E8E8;
+    color: black;
+    text-align: left;
+    font-family: dinlight;
+    background-color: white;
+    padding-left:20px;
+    position: relative;
+}
+
+.course-icon img {
+    
+    position:absolute;
+    top: 10px;
+    right: 32px;
+    height: 28px;
+}
+
+#add-course-icon{
+    width: 25px;   
+    margin-bottom:-6px;
+}
+
+#newCourse {
+    width: 237px;
+    margin-left: 20px;
+}
+
+#newEvent.ui-page-theme-a .ui-btn, html .ui-bar-a .ui-btn, html .ui-body-a .ui-btn, html body .ui-group-theme-a .ui-btn, html head+body .ui-btn.ui-btn-a, .ui-page-theme-a .ui-btn:visited, html .ui-bar-a .ui-btn:visited, html .ui-body-a .ui-btn:visited, html body .ui-group-theme-a .ui-btn:visited, html head+body .ui-btn.ui-btn-a:visited {
+    text-align: center !important;
+    background-color: white;
+}
+
+.ui-selectmenu.ui-dialog .ui-content {
+    padding: 16px !important;
+}
+
+.ui-selectmenu .ui-header .ui-title {
+    margin-bottom: 13px;
+}
+
+#courses {
+    padding:15px;   
+}
+
+/* category popup */
+
+#categoryPopup #category-header{
+    text-align: center;
+    font-family: dinlight;
+    font-size: 1.5em;
+    border-bottom: 2px solid #0D6BA0;
+    padding-bottom: 12px;
+    margin-bottom: 10px;
+    padding-top: 19px;
+
+    color: #0D6BA0;
+    font-weight: bold;
+}
+
+#categoryPopup > div{
+    padding:16px;
+    padding-top: 0;
+}
+
+#categoryPopup{
+    padding-top: 0px !important;
+    text-align:center;
+    border-radius: 0;
+    box-shadow: 0px 0px 10px 1000px rgba(0,0,0,.6);
+}
+
+#categoryPopup div div div {
+    width: 10px;
+    height: 10px;
+    padding: 33%;
+    border-radius: 100%;
+    background-repeat: no-repeat;
+    background-size: 35%;
+    background-position: center;
+    margin: 10px;
+    margin-bottom: 5px;
+}
+
+#categoryPopup div div div#readingCircle {
+    background-color: #516bb2;
+}
+
+#categoryPopup div div div#meetingCircle {
+    background-color: #6da6da;
+}
+
+#categoryPopup div div div#assCircle {
+    background-color: #6cc9cc;
+}
+
+#categoryPopup div div div#quizCircle {
+    background-color: #67c4a7;
+}
+
+#categoryPopup div div div#examCircle {
+    background-color: #565eaa;
+}
+
+#categoryPopup div div div#otherCircle {
+    background-color: #56a7d5;
+}
+
+/* category */
+
+html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video{
+    text-decoration: none;
+}
+
+/* icon height */
+
+td img{
+    height: 25px;
+}
+
+/*----- back and save buttons -----*/
+
+.input-back {
+    background-color: #0D6BA0;
+    height: 45px;
+    width: 60px;
+    padding-left: 30px;
+    margin-left:-30px;
+}
+
+#input-save {
+    margin-top: -1px;
+    background-color: #0D6BA0;
+    height: 45px;
+    width: 55px;
+    padding-left: 13px;
+    margin-right: -8px;
+    color: #A4A4A4;
+}
+
+.input-back-img {
+    position: absolute;
+    left: 9px;
+    top: 10px;
+    height:25px;
+  
+}
+
+#input-email {
+    margin-top: -1px;
+    background-color: #0D6BA0;
+    height: 45px;
+    width: 110px;
+    padding-left: 0px;
+    padding-right: 25px;
+    margin-left: 5px;
+    margin-right: -25px;
+    font-weight: 100;
+}
+
+/*----- Rollover -----*/
+
+/* title validation */
+.no-title {
+    background-color: red;
+}
+
+.blue{
+    border-color:#0D6BA0;
+}
+
+.pop-rollover{
+    background-color: #E8E8E8;
+}
+
+.input-nav-rollover{
+    background-color: #38c !important;
+}
+
+/**************************************************************************************************/
+
+/*----------||||| ALL EVENT PAGE |||||----------*/
+
+/*----- HEADER -----*/
+#allEventHeader {
+    background-color: #0D6BA0;
+    height: 45px;
+    max-height: 48px;
+    font-size: 1.5em;
+    font-family: dinregular;
+    color: #FFFFFF;
+    text-align: center;
+    line-height: 45px;
+}
+
+#addNewEvent {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    height: 35px;
+}
+
+#allEvents {
+    font-family: dinregular;
+}
+
+.ui-collapsible-inset .ui-collapsible-heading .ui-btn {
+    background-color: white;
+    height: 30px;
+    border-radius: 0px;
+    border: none;
+}
+.ui-collapsible-inset.ui-collapsible-themed-content .ui-collapsible-content {
+    border: 0px;
+    /*padding: 0px;*/
+}
+
+.ui-body-a, .ui-page-theme-a .ui-body-inherit, html .ui-bar-a .ui-body-inherit, html .ui-body-a .ui-body-inherit, html body .ui-group-theme-a .ui-body-inherit, html .ui-panel-page-container-a {
+    padding-top: 0px;
+    padding-bottom: 0px;
+}
+
+#allEvents.ui-page-theme-a .ui-panel-wrapper, #manageCourses.ui-page-theme-a .ui-panel-wrapper {
+    background-color: #E8E8E8;   
+}
+
+.ui-collapsible-inset.ui-collapsible-themed-content .ui-collapsible-content {
+	background-color: #E8E8E8;
+}
+
+
+/**************************************************************************************************/
+
+/*----------||||| HELP PAGE |||||----------*/
+
+.ui-content {
+    overflow-x: visible;
+}
+
+.helpContainer {
+    height: 100%; 
+    width: 100%; 
+    position: fixed; 
+    top:0; 
+    right: 0;
+}
+
+.helpInnerContainer {
+    height: 100%; 
+    width: 100%;"
+}
+
+/* HELP INTERFACE */
+#helpStart {
+    background-color: #0D6BA0;
+    padding: 10px;
+    font-family: dinlight;
+    border-radius: 2px;
+    position:relative;
+    left: 50%;
+    margin-left: -70px;
+}
+
+#helpStart:active {
+    background-color: #1c75bc;
+}
+#helpSkip {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    margin-left: 30px;
+    margin-bottom: 20px;
+    padding: 5px;
+    font-family: dinlight;
+    border-radius: 2px;
+}
+
+#helpSkip:active {
+    background-color: #1c75bc;
+}
+
+.helpNext {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    background-color: #0D6BA0;
+    padding: 5px;
+    font-family: dinlight;
+    border-radius: 2px;
+}
+
+.helpNext:active {
+    background-color:#1c75bc;    
+}
+
+.helpBack {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    margin-left: 10px;
+    margin-bottom: 10px;
+    background-color: #0D6BA0;
+    padding: 5px;
+    font-family: dinlight;
+    border-radius: 2px;
+}
+
+.helpBack:active {
+    background-color:#1c75bc;        
+}
+.helpButton {
+    color: white;
+}
+
+#helpLocation1 {
+    position: fixed;
+    bottom: 17px;
+    left: 45%;
+    background-color: white;
+    border-radius: 40px;
+    height: 6px;
+    width: 6px;
+}
+
+#helpLocation2 {
+    position: fixed;
+    bottom: 17px;
+    left: 50%;
+    background-color: white;
+    border-radius: 40px;
+    height: 6px;
+    width: 6px;
+}
+
+#helpLocation3 {
+    position: fixed;
+    bottom: 17px;
+    left: 55%;
+    background-color: white;
+    border-radius: 40px;
+    height: 6px;
+    width: 6px;
+}
+
+#helpLocation4 {
+    position: fixed;
+    bottom: 17px;
+    left: 56%;
+    background-color: white;
+    border-radius: 40px;
+    height: 6px;
+    width: 6px;
+}
+
+#helpSelected1 {
+    position: fixed;
+    bottom: 15px;
+    left: 44%;
+    background-color: white;
+    border-radius: 40px;
+    height: 12px;
+    width: 12px;
+}
+
+#helpSelected2 {
+    position: fixed;
+    bottom: 15px;
+    left: 50%;
+    background-color: white;
+    border-radius: 40px;
+    height: 12px;
+    width: 12px;
+}
+
+#helpSelected3 {
+    position: fixed;
+    bottom: 15px;
+    left: 55%;
+    background-color: white;
+    border-radius: 40px;
+    height: 12px;
+    width: 12px;
+}
+
+
+/* FIRST PAGE */
+#help {
+    background-color: #6495ED;
+}
+
+#helpIntro {
+    color: white;
+    font-family: dinlight;
+    font-size: 1.5em;
+    text-align: center;
+    margin-top: 200px;
+    opacity: 0.8;
+    margin-left: -110px;
+}
+
+#helpIntroTW {
+    color: white;
+    font-size: 3.0em;
+    font-family: dinmedium;
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+/* LAST PAGE */
+#help4 {
+    background-color: #6495ED;
+}
+
+#helpIntroEnding {
+    margin-top: 150px;
+    color: white;
+    font-size: 3.0em;
+    font-family: dinmedium;
+    text-align: center;
+}
+
+/**************************************************************************************************/
+
+/*----------||||| History PAGE |||||----------*/
+
+#historyHeader {
+    background-color: #0D6BA0;
+    height: 45px;
+    max-height: 48px;
+    font-size: 1.5em;
+    font-family: dinlight;
+    color: #FFFFFF;
+    text-align: center;
+    line-height: 45px;
+}
+
+/**************************************************************************************************/
+
+/*----------||||| FEEDBACK PAGE |||||----------*/
+
+/* about */
+
+.question {
+    font-family: dinregular;
+    font-size: 1.2em;
+    color: #0D6BA0;
+    margin-bottom: 10px;
+}
+
+.answer{
+    font-family: dinregular;
+    margin-bottom: 20px;
+    line-height: 1.2em;
+
+}
+/* team member profiles */
+
+#team-profiles img {
+    width: 120px;
+    height: 160px;
+}
+
+.team-member {
+    display: inline-block;
+    text-align: center;
+    font-family: dinregular;
+    padding: 8px;
+    border: 2px solid #E8E8E8;
+    margin:2px;
+    color: #0D6BA0;
+    margin-top: 5px;
+}
+
+.team-member div{
+    margin-top: 5px;
+}
+
+/**/
+
+#feedback {
+    background-color: #F9F9F9;
+}
+
+#feedback .ui-page-theme-a, #feedback .ui-panel-wrapper {
+    background-color: white;   
+}
+
+#profile-header{
+    font-family: dinregular;
+    font-size: 1.2em;
+    color: #0D6BA0;
+    margin-bottom: 10px;
+    
+}
+/*----- HEADER -----*/
+#feedbackHeader {
+    background-color: #0D6BA0;
+    height: 45px;
+    max-height: 48px;
+    font-size: 1.2em;
+    font-family: dinregular;
+    color: #FFFFFF;
+    text-align: center;
+    line-height: 45px;
+}
+
+#feedbackForm {
+    padding: 16px;
+    padding-top: 0px;
+
+}
+
+#feedbackDescription {
+    margin-top: 15px;
+    font-family: dinregular;
+    padding-bottom: 30px;
+    font-size: 1.2em;
+    line-height: 1.5em;
+    font-weight: bold;
+
+}
+
+#feedbackFormTable {
+    width: 100%;
+}
+
+#feedback-email-icon {
+    height: 16px;
+}
+
+/* adds padding to left of input icon */
+
+#feedback-icon-div {
+    padding-left: 15px;
+    padding-bottom: 15px;
+    padding-top: 15px;
+}
+
+/* save button */
+
+#saveButtonFeedback {
+    position:absolute;
+    right: 8px;
+    top: 1px;
+}
+
+#saveButtonFeedback a {
+    color: white;
+}
+
+/**************************************************************************************************/
+
+/*----------||||| SLIDE OUT NAVIGATION PANEL |||||----------*/
+
+#leftpanel1, #leftpanel2, #leftpanel3, #leftpanel4 {
+    font-family: dinlight;
+    background-color: #E8E8E8;
+    -webkit-box-shadow: 5px 0 5px rgba(0,0,0,.15);
+    box-shadow: 5px 0 5px rgba(0,0,0,.15);
+    z-index: 1001;
+}
+
+/*-----HEADER SECTION-----*/
+#navHeader > * {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+#title {
+    font-family: dinregular;
+    font-size: 1.4em;
+    color: #FFFFFF;
+    margin-top: 10px;
+}
+
+#navHeader {
+    background-color: #0D6BA0;
+    height: 45px;
+    max-height: 48px;
+}
+
+#sidePanelLogo {
+    height: 22px;
+    padding-left: 13px;
+    padding-right: 7px;
+    margin-top: 10px;
+}
+/*-----END OF HEADER-----*/
+
+
+/*-----NAVIGATION BUTTONS-----*/
+
+#navMenu li div > * {
+    display: inline-block;
+}
+
+.primaryNav {
+    font-family: dinregular;
+    color: #464646;
+    font-size: 1.2em;
+    height: 48px;
+    max-height: 48px;
+    line-height: 48px;
+    background-color: white;
+    border-bottom: 1px solid #e8e8e8;
+}
+
+.secondaryNav {
+    font-family: dinregular;
+    color: #464646;
+    background-color: #F6F6F6;
+    font-size: 0.7em;
+    line-height: 35px;
+    border-bottom: 1px solid #e8e8e8;
+}
+
+/*-----NAVIGATION ICONS-----*/
+
+.mainIcon {
+    padding-left: 15px;
+    padding-bottom: 5px;
+    padding-right: 13px;
+    height: 25px;
+    vertical-align:middle;
+}
+
+.smallerIcon {
+    padding-left: 15px;
+    padding-bottom: 5px;
+    padding-right: 13px;
+    height: 15px;
+    vertical-align:middle;
+}
+
+/*-----CURRENT PAGE EFFECT-----*/
+
+#currentlyActive {
+    color: white;
+    font-family: dinregular;
+    text-decoration: none;   
+}
+
+#currentlyActive div {
+    background-color: #3e3e3e;
+    color:white;
+}
+
+/*-----CLICK ANIMATION-----*/
+
+#navMenu a:active {
+    background-color: #3e3e3e;
+    color: white;
+}
+
+#navMenu li a{
+    display: block;
+
+    color: #464646;
+    text-decoration: none;
+    font-weight: normal;
+}
+/*-----END OF NAVIGATION BUTTONS-----*/
+
+
+#hpage_sideNav:active {
+    background-color:red;
+}
+
+/*----------END OF SLIDE OUT NAVIGATION PANEL----------*/

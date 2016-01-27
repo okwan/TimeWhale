@@ -1,0 +1,2525 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!--////////////////   CSS STYLESHEETS   ///////////////-->
+        <link rel="stylesheet" type="text/css" href="css/jquery.css">
+        <link rel="stylesheet" type="text/css" href="css/jquery.mobile.structure-1.4.2.min.css">
+        <link rel="stylesheet" type="text/css" href="css/base.css">
+        <!-- css for timepicker -->
+        <link rel="stylesheet" type="text/css" href="css/jquery.timepicker.css">
+
+        <!--////////////////   SCRIPT SOURCES   ///////////////-->
+        <script src="js/jquery-1.10.2.min.js"></script>
+
+        <!--PARSE CLOUD. Not used for now. Have to finish database first, and it slows down loading -->
+        <script src="http://www.parsecdn.com/js/parse-1.2.18.min.js"></script>
+
+        <!--USED FOR DATEPICKER: Resets type=date inputs to text-->
+        <!--THIS CODE MUST COME AFTER THE JQUERY JS AND BEFORE THE JQUERY MOBILE JS-->
+        <script>
+            $(document).bind( "mobileinit", function(){
+                $.mobile.page.prototype.options.degradeInputs.date = true;
+            });	
+        </script>
+
+        <script src="js/jquery.min.js"></script>
+
+        <!--Used for datepicker widget on "Add Event" page-->
+        <!--<script src="js/jQuery.ui.datepicker.js"></script>-->
+        <!--<script src="js/jquery.ui.datepicker.mobile.js"></script>-->
+        <script src="js/jquery.mobile-1.4.2.min.js"></script>
+        <!-- ============================================= MOBISCROLL TIME PICKER =============================================-->
+        <style type="text/css">
+            .demo {
+                display: none;
+            }
+        </style>
+
+        <script src="js/shake.js"></script>
+
+        <script src="js/jquery.touchSwipe.js"></script>
+        <script src="js/jquery.touchSwipe.min.js"></script>
+
+        <script src="js/mobiscroll.core.js"></script>
+        <script src="js/mobiscroll.scroller.js" type="text/javascript"></script>
+
+        <script src="js/mobiscroll.datetime.js" type="text/javascript"></script>
+        <script src="js/mobiscroll.select.js" type="text/javascript"></script>
+
+        <script src="js/mobiscroll.scroller.android-ics.js" type="text/javascript"></script>
+
+        <link href="css/mobiscroll.scroller.css" rel="stylesheet" type="text/css" />
+        <link href="css/mobiscroll.scroller.android-ics.css" rel="stylesheet" type="text/css" />
+
+        <link href="css/mobiscroll.animation.css" rel="stylesheet" type="text/css" />
+
+        <!-- PUSHER TESTING -->
+
+        <script src="http://js.pusher.com/2.2/pusher.min.js"></script>
+        <script>
+            var pusher = new Pusher('a893e2c5223a6e1361c7');
+            var channel = pusher.subscribe('test_channel');
+            channel.bind('my_event', function(data) {
+                alert('An event was triggered with message: ' + data.message);
+            });
+        </script>
+
+        <!-- TimeWhale Add Event Page JS -->
+        <script type="text/javascript" src="js/addeventpage.js"></script>
+        <script>
+            // GLOBAL VARIABLES
+            var allCourses = []; // Global array of ALL courses
+            var uniqueCourses = []; // Global array of UNIQUE courses
+            var existingID = -1; // -1 means that the ID of the task does not exist
+            var newCourseName = "";
+            var priority = 0;
+            var eventDate;
+            var time;
+            var courseName;
+            var category = 0;
+            var description;
+
+            // back button variable representing previous page
+            var prev = 1; // homepage
+        </script>
+
+        <!-- Preset Events JS -->
+        <script src="js/newuser.js"></script>
+
+        <!--////////////////   FASTCLICK JS   ///////////////-->
+
+        <script type="application/javascript" src="js/fastclick.js"></script>
+
+        <!--////////////////   JAVASCRIPT FUNCTIONS   ///////////////-->
+
+        <script type="text/javascript">
+
+            /*************************************************************************************/
+            /***** --------------------------- DATABASE FUNCTIONS -------------------------- *****/
+            /*************************************************************************************/
+
+            var taskdb = {}; // TASK DATABASE
+            taskdb.webdb = {};
+            taskdb.webdb.db = null;
+
+            var coursedb = {}; // COURSE DATABASE
+            coursedb.webdb = {};
+            coursedb.webdb.db = null;
+
+            /* OPEN DATABASES */
+            taskdb.webdb.open = function() {
+                var dbSize = 5 * 1024 * 1024; // 5MB
+                taskdb.webdb.db = openDatabase("eventdb", "1.0", "task manager", dbSize); 
+            }                       
+
+            coursedb.webdb.open = function() {
+                var dbSize = 5 * 1024 * 1024; // 5MB
+                coursedb.webdb.db = openDatabase("coursedb", "1.0", "course manager", dbSize); 
+            }  
+
+            /* CREATE TABLES */
+            taskdb.webdb.createTable = function() {
+                var db = taskdb.webdb.db;
+                db.transaction(function(tx) {
+                    tx.executeSql("CREATE TABLE IF NOT EXISTS events(ID INTEGER PRIMARY KEY ASC, title TEXT, added_on DATETIME, priority INTEGER, taskDate DATE, taskTime TIME, course TEXT, category INTEGER, description TEXT, pseudorank INTEGER)", []);
+                });
+            }
+
+            coursedb.webdb.createTable = function() {
+                var db = coursedb.webdb.db;
+                db.transaction(function(tx) {
+                    tx.executeSql("CREATE TABLE IF NOT EXISTS courses(ID INTEGER PRIMARY KEY ASC, course TEXT)", []);
+                });
+            }
+
+            /* ADD NEW ROW TO TABLE */
+            taskdb.webdb.addEvent = function(titleValue, priorityValue, taskDateValue, taskTimeValue, courseValue, categoryValue, descriptionValue, pseudorankValue) {                
+                var db = taskdb.webdb.db;
+                db.transaction(function(tx){
+                    var addedOn = new Date().toLocaleDateString(); // datetime that the event was added on, tolocaledate for brevity
+                    tx.executeSql("INSERT INTO events(title, added_on, priority, taskDate, taskTime, course, category, description, pseudorank) VALUES (?,?,?,?,?,?,?,?,?)",
+                                  [titleValue, addedOn, priorityValue, taskDateValue, taskTimeValue, courseValue, categoryValue, descriptionValue, pseudorankValue],
+                                  taskdb.webdb.onSuccess,
+                                  taskdb.webdb.onError);
+                });
+            }
+
+            /* UPDATE EXISTING ROW IN TABLE */
+            updateEvent = function(titleValue, priorityValue, taskDateValue, taskTimeValue, courseValue, categoryValue, descriptionValue, pseudorankValue) {
+                var db = taskdb.webdb.db;
+                db.transaction(function(tx){
+                    var addedOn = new Date().toLocaleDateString();
+                    tx.executeSql("UPDATE events SET title=?, priority=?, taskDate=?, taskTime=?, course=?, category=?, description=?, pseudorank=? WHERE ID=?", 
+                                  [titleValue, priorityValue, taskDateValue, taskTimeValue, courseValue, categoryValue, descriptionValue, pseudorankValue, existingID], 
+                                  taskdb.webdb.onSuccess, 
+                                  taskdb.webdb.onError);
+                });
+            }
+
+            coursedb.webdb.addCourse = function(courseValue) {
+                var db = coursedb.webdb.db;
+                db.transaction(function(tx){
+                    tx.executeSql("INSERT INTO courses(course) VALUES (?)",
+                                  [courseValue],
+                                  coursedb.webdb.onSuccess, 
+                                  coursedb.webdb.onError);
+                });
+            }
+
+            /* SUCCESS AND ERROR CALLBACKS */
+            taskdb.webdb.onError = function(tx, e) {
+                alert("There has been an error: " + e.message);
+            }
+
+            taskdb.webdb.onSuccess = function(tx, r) {
+                // re-render the data.
+                taskdb.webdb.getAllTodoItems(loadTodoItems);
+            }
+
+            coursedb.webdb.onError = function(tx, e) {
+                alert("There has been an error: " + e.message);
+            }
+
+            coursedb.webdb.onSuccess = function(tx, r) {
+                // re-render the data.
+                coursedb.webdb.getAllCourseItems(loadCourseItems);
+            }
+            
+        
+            /* SELECT FUNCTIONS */
+            taskdb.webdb.getAllTodoItems = function(renderFunc) {
+                var db = taskdb.webdb.db;
+                db.transaction(function(tx) {
+                    tx.executeSql("SELECT * FROM events", [], renderFunc,
+                                  taskdb.webdb.onError);
+                });
+            }
+
+            coursedb.webdb.getAllCourseItems = function(renderFunc) {
+                var db = coursedb.webdb.db;
+                db.transaction(function(tx) {
+                    tx.executeSql("SELECT * FROM courses", [], renderFunc,
+                                  coursedb.webdb.onError);
+                });
+            }
+
+            /* DELETE FUNCTIONS */
+            taskdb.webdb.deleteTodo = function(id) {
+                var db = taskdb.webdb.db;
+                db.transaction(function(tx){
+                    tx.executeSql("DELETE FROM events WHERE ID=?", [id],
+                                  taskdb.webdb.onSuccess,
+                                  taskdb.webdb.onError);
+                });
+            }
+
+            coursedb.webdb.deleteTodo = function(id) {
+                var db = coursedb.webdb.db;
+                db.transaction(function(tx){
+                    tx.executeSql("DELETE FROM courses WHERE ID=?", [id],
+                                  coursedb.webdb.onSuccess,
+                                  coursedb.webdb.onError);
+                });
+                window.location.href = '#newEvent';
+                $("#addHere").html('');
+                loadCoursesIntoPopup();
+            }
+
+            /* DELETES EVENTS FROM DATABASE (!!Used for homepage priority events only!!) */
+            taskdb.webdb.deletePriorityTodo = function(index) {
+                var db = taskdb.webdb.db;
+                var eventList = loadHomepageEvents(); // gets all the events from database
+
+                db.transaction(function(tx){
+                    tx.executeSql("DELETE FROM events WHERE ID=?", [eventList[index].ID],  // finds the event where ID matches and deletes it
+                                  taskdb.webdb.onSuccess,
+                                  taskdb.webdb.onError);
+                });
+            }
+
+            /* LOAD ITEMS, NOT USED */
+            function loadTodoItems(tx, rs) {
+                var rowOutput = "";
+                var todoItems = document.getElementById("todoItems");
+                for (var i=0; i < rs.rows.length; i++) {
+                    rowOutput += renderTodo(rs.rows.item(i));
+                }
+                //todoItems.innerHTML = rowOutput;
+            }
+
+            function loadCourseItems(tx, rs) {
+                var rowOutput = "";
+                var courseItems = document.getElementById("courseItems");
+                for (var i=0; i < rs.rows.length; i++) {
+                    rowOutput += renderCourse(rs.rows.item(i));
+                }
+                //courseItems.innerHTML = rowOutput;
+            }
+
+            /* LOADS COURSES INTO COURSE SELECTION POP UP */
+            function loadCoursesIntoPopup() {
+                var db = coursedb.webdb.db;
+                db.transaction(function(tx) {
+                    tx.executeSql("SELECT * FROM courses", [], // get all data values from courses table
+
+
+                                  function(tx,rs) {
+                                      for (var i=0; i < rs.rows.length; i++){  // loops through all entries of course table
+
+                                          // adds all existing courses into the selection popup 
+                                          /*$("#addHere").prepend("<a href='index.html/#newEvent'>" + "<div class='course-option' onclick='courseName=this.innerHTML;displayCourseName();'>" + rs.rows.item(i).course + "</div>" + "</a>");*/
+                                          
+                                          $("#addHere").prepend("<table style='width: 100%'><tr><td class='course-option'><a href='index.html/#newEvent'>"
+                                                                + "<div onclick='courseName=this.innerHTML;displayCourseName();'>"
+                                                                + rs.rows.item(i).course + "</div>"
+                                                                + "</a></td><td class='course-icon'>"
+                                                                + "<div onclick='coursedb.webdb.deleteTodo(" + rs.rows.item(i).ID + ");'><img src='resources/images/tw_icon_removeEvent.png'></div>"   
+                                                                + "</td></tr></table>");
+                                          resetNewCourse();
+                                      } 
+                                  } , coursedb.webdb.onError);
+                });
+            }        
+
+            /* LOAD HEADERS ON ALL EVENTS FOR ALL UNIQUE COURSE NAMES */
+            function loadAllEventsHeaders(tx, rs) {
+
+                for (var i=0; i < rs.rows.length; i++) {
+                    allCourses.push(rs.rows.item(i).course); // Add every course name into allCourses[] 
+                }
+                uniqueCourses = allCourses.unique(); // Put unique course name into uniqueCourses[]
+
+                for (var i=0; i < uniqueCourses.length; i++) {
+                    var headerName = (uniqueCourses[i] === "") ? "Other" : uniqueCourses[i];
+                    $('#collapsibleContent').append( // Generate the divs for each unique course
+                        '<div style="margin-bottom: 1px;" data-role="collapsible" data-collapsed="true" data-iconpos="none" id="event'+ i +'">'
+                        + '<h1 style="padding-left: 10px;" onclick="tapSoundEffect();"><span style="font-family: dinregular; font-size: 1.5em;">'
+                        + headerName.toUpperCase()
+                        + '</span><span style="float: right; background-color: #0D6BA0; color: white; border-radius: 2px; height:25px; width: 38px; margin-right: 8px; text-align: center; padding-top: 5px;" id="numTask' + i +'">' 
+                        + '</span></h1></div>'
+                    );
+                }
+            }
+
+            /* LOADS EVENTS INTO ALL EVENTS UNDER CORRECT HEADER, RETURNS SORTED ARRAY OF EVENTS */
+            function loadEventsIntoHeaders(tx, rs) {                
+                var eventList = [];
+                // LOOP THROUGH ALL EVENTS, PUT INTO ARRAY, AND SORT THE ARRAY
+                for (var i=0; i < rs.rows.length; i++){ 
+                    eventList.push(rs.rows.item(i));
+
+                    /* First sort by date */
+                    eventList.sort(function(a, b) {
+                        var aDate = (a.taskDate) ? new Date(a.taskDate).getTime() : 0;
+                        var bDate = (b.taskDate) ? new Date(b.taskDate).getTime() : 0;
+
+                        return aDate-bDate; // ascending order of date
+                    });
+
+                    /* Second sort by pseudorank. Time bump is factored in */
+                    eventList.sort(function(a, b) {
+                        var aRank = pseudoRank(a.priority, (a.taskDate+""), (a.taskTime+""), a.category);
+                        var bRank = pseudoRank(b.priority, (b.taskDate+""), (b.taskTime+""), b.category);
+
+                        return bRank-aRank; // descending order of pseudorank
+                    });
+                }
+
+                var IDcount = 0; // Counter for unique IDs (Needed for expand, complete, edit, delete)
+                var numEventsInHeader = 0; // Number of events under that header
+                // BEGIN OUTER LOOP FOR COURSE HEADERS
+                for (var x=0; x < uniqueCourses.length; x++) { // FOR EACH HEADER -- x for outer loop
+                    // BEGIN INNER LOOP FOR ALL EVENTS
+                    for (var i=0; i < eventList.length; i++){  // FOR EACH EVENT IN EVENTLIST -- i for inner loop  
+                        // GET DETAILS OF THIS EVENT
+                        var eventName = eventList[i].title.toUpperCase();
+                        var eventDate = eventList[i].taskDate;   
+                        var eventTime = eventList[i].taskTime;
+                        var eventPriority = eventList[i].priority;
+                        var eventCourse = (eventList[i].course);
+                        var eventCategory = eventList[i].category;
+                        var eventDetails = eventList[i].description;
+                        var eventID = eventList[i].ID;
+                        var categIcon = "resources/images/";
+                        switch (eventCategory){
+                            case 1: categIcon += "tw_icon_reading.png"; break;
+                            case 2: categIcon += "tw_icon_pmeeting.png"; break;
+                            case 3: categIcon += "tw_icon_input_assignment.png"; break;
+                            case 4: categIcon += "tw_icon_quiz.png"; break;
+                            case 5: categIcon += "tw_icon_exam.png"; break;
+                            default: categIcon += "tw_icon_input_other.png"; break;
+                        }
+
+                        // If EVENT COURSE MATCHES HEADER, ADD THAT EVENT AS A COLLAPSIBLE
+                        if (eventCourse === uniqueCourses[x]) {           
+                            numEventsInHeader++; // Increment the number of events under this header
+                            IDcount++; // Increment unique ID count
+                            var colorIndex = ((numEventsInHeader)%5 == 0) ? 5 : (numEventsInHeader)%5; 
+                            var IDminus1 = IDcount-1;
+                            $('#event'+ x).append(
+                                '<div style="position: relative; left: 0;" id="task'+ IDcount +'" class="outerTaskContainer">'
+                                + '<div onclick="expandFunction(this.id);" id="box' + IDcount + '" class="priorityTaskContainer">'
+                                + '<div id="color'+ (colorIndex) +'" class="priorityTaskIcon ae-c' + IDminus1 + '">'
+                                + '<img src="">' // CATEGORY IMAGE **needs to be updated**
+                                + '</div><div class="priorityTask"><table class="priority-event-title-and-course"><tr><td class="priority-eventTitle" id="eventTitleText' + IDcount + '"><div id="textOverflow">'
+                                + eventName
+                                + '</div></td></tr><tr><td class="priority-event-time-course-day">'
+                                + eventTime + displaySplitter1(eventTime, eventDate, eventCourse) + eventDate + displaySplitter2(eventTime, eventDate, eventCourse) + eventCourse
+                                + '</td></tr></table></div></div>'
+                                + '<div style="display: none; background-color: white;" id="expandbox' + IDcount + '" class="priorityTaskContainer2">'
+                                + '<div class="priorityTask2"><table class="priority-description-and-menu"><tr>'
+                                + '<td id="color'+ (colorIndex) +'" class="priority-task-icon ae-c' + IDminus1 + '">'
+                                + '</td><td colspan=4 class="priority-description"><div class="height-limiter">'
+                                + eventDetails
+                                + '</div></td></tr><tr class="priority-edit-menu">'
+                                + '<td id="color'+ (colorIndex) +'" class="priority-task-icon ae-c' + IDminus1 + '" onclick="tapSoundEffect();">'
+                                + '</td><td class="priority-edit-menu-buttons">'
+                                + '<img src="resources/images/tw_icon_completeEvent.png" id="homepageDoneImg'+ IDcount +'" class="'+ IDcount +'" onclick="allEventsCompleteTask(' + IDcount +','+ eventID + '); pageRefreshComplete();">' // COMPLETE
+                                + '</td><td class="priority-edit-menu-buttons">'
+                                + '<img src="resources/images/tw_icon_editEvent.png" id="eventsEditImg'+ IDcount +'" class="'+ IDcount +'" onclick="allEventsEditTask(' + IDcount +','+ eventID + ');">' // EDIT
+                                + '</td><td class="priority-edit-menu-buttons">'
+                                + '<img src="resources/images/tw_icon_removeEvent.png" id="deleteImg'+ IDcount +'" class="'+ IDcount +'" onclick="allEventsDeleteTask(' + IDcount +','+ eventID + '); pageRefreshDelete();">' // DELETE
+                                + '</td><td class="priority-rank">' // PRIORITY
+                                + '</td></tr></table></div></div></div>'
+                            );
+                            $('#task' + IDcount + ' #box' + IDcount + ' img').attr('src', categIcon); // Set category icon
+                            // Make the icon's background color grey if this event is expired
+                            var calcDate = (eventList[i].taskDate) ? eventList[i].taskDate : "00/00/0000";
+                            var calcTime = "00:00 AM";
+                            if (calcHours2(calcDate, calcTime) <= 0) {
+                                changeBoxColor("ae-c"+IDminus1);
+                            }
+                            loadStars(eventPriority, ($("#task" + IDcount + " .priority-rank"))); // Set priority stars
+                            document.getElementById('numTask' + x).innerHTML = (numEventsInHeader); // Set number of tasks in header
+                        } // END IF COURSE=HEADER NAME STATEMENT
+                    } // END INNER LOOP THROUGH EVENT DATABASE
+                    numEventsInHeader = 0; // set back to 0 for next header
+                } // END OUTER LOOP THROUGH HEADERS
+
+                // refresh collapsible content
+                $('#collapsibleContent').find('div[data-role=collapsible]').collapsible();
+                $('#collapsibleContent').trigger('create'); //
+                return eventList;
+            }
+
+            /* RENDER ITEMS TO ADD EVENT PAGE FOR DEBUGGING */
+            function renderTodo(row) {
+                return "<li>Title: " + row.title 
+                + "<br>Due Date: " + row.taskDate 
+                + " <br> Due Time: " + row.taskTime 
+                + " <br>Priority: " + row.priority 
+                + " <br>Course: " + row.course 
+                + " <br>Category: " + row.category 
+                + " <br>Details: " + row.description 
+                + " <br>Pseudorank: " + row.pseudorank
+                + " <br>[<a href='javascript:void(0);'  onclick='taskdb.webdb.deleteTodo(" + row.ID +");'>Delete</a>]</li>" // Deletes this row from table
+                + "<br>";
+            }
+
+            function renderCourse(row) {
+                return "<br>" + row.course 
+                + " [<a href='javascript:void(0);' onclick='coursedb.webdb.deleteTodo("+ row.ID +");'>Delete</a>]</li>" // Deletes this row from table
+                + "<br>";
+            }
+
+            function init() {
+                taskdb.webdb.open();
+                taskdb.webdb.createTable();
+                taskdb.webdb.getAllTodoItems(loadTodoItems);
+                taskdb.webdb.getAllTodoItems(loadAllEventsHeaders); // load event header divs
+                taskdb.webdb.getAllTodoItems(loadEventsIntoHeaders); // load events into header divs
+                coursedb.webdb.open();
+                coursedb.webdb.createTable();
+                coursedb.webdb.getAllCourseItems(loadCourseItems);
+                loadHomepageEvents(); // loads top 5 priority events to Homepage
+                loadCoursesIntoPopup(); // loads all courses from database into the course popup selection on input page
+            }
+
+            /* ADD ITEM TO DATABASE */
+            function addEvent() {
+                // grabs all the values that have been entered
+                var title = document.getElementById("eventName");
+                var description = document.getElementById("details");
+                var taskDate = document.getElementById("datepicker");
+                var taskTime = document.getElementById("demo");
+                //var course = document.getElementById("coursePopupText").innerHTML;
+
+                // checks to see if a course has been selected, if it has not, make the string empty
+                if (typeof courseName == 'undefined'){
+                    courseName = "";   
+                }
+
+                // calculates the pseudorank based on defined priority, date, time, and category
+                var pseudorankValue = pseudoRank(priority, taskDate.value, taskTime.value, category);
+
+                //add input values into task database
+                taskdb.webdb.addEvent(title.value, priority, taskDate.value, taskTime.value, courseName, category, description.value, pseudorankValue);     
+
+                /* Add input values into Parse database */
+
+                // Krystle's Parse app ID and key
+                Parse.initialize("jibKcVo8axaJOseuMuJzbhVgF4unybi7N0wgIhpG", "62RZhzztmpyn9pUh7Dt7DoikK7o4ZlKlW4gv1qHd"); 
+                // Create a variable TestObject that extends Events class, which is a database on Parse
+                var TestObject = Parse.Object.extend("Events"); 
+                // Create an instance of a TestObject
+                var testObject = new TestObject(); 
+                // Save these values to the testObject attributes
+                testObject.save({title: title.value, //string
+                                 priority: priority, //number
+                                 taskTime: taskTime.value, //string
+                                 taskDate: taskDate.value, //string
+                                 course: courseName, //string
+                                 category: category, //number
+                                 description: description.value, //string
+                                 pseudorank: pseudorankValue}); //number
+
+                // reset values
+                resetInputs();
+            }
+
+            function updateExistingEvent() {
+                //grab all the values that have been entered
+                var title = document.getElementById("eventName");
+                var description = document.getElementById("details");
+                var taskDate = document.getElementById("datepicker");
+                var taskTime = document.getElementById("demo");
+                courseName = document.getElementById("coursePopupText").innerHTML;
+                category = document.getElementById("categoryPopupText").innerHTML;
+                switch (category) {
+                    case "Reading": category = 1; break;
+                    case "Project Meeting": category = 2; break;
+                    case "Assignment": category = 3; break;
+                    case "Quiz": category = 4; break;
+                    case "Exam": category = 5; break;
+                    default: category = 6; break;
+                }
+
+                // checks to see if a course has been selected, if it has not, make the string empty
+                if (typeof courseName == 'undefined'){
+                    courseName = "";   
+                }
+                if (courseName == 'Select a Course'){
+                    courseName = "";   
+                }
+
+                // calculates the pseudorank based on defined priority, date, time, and category
+                var pseudorankValue = pseudoRank(priority, taskDate.value, taskTime.value, category);
+
+                // update existing row in the events table
+                updateEvent(title.value, priority, taskDate.value, taskTime.value, courseName, category, description.value, pseudorankValue);
+            }
+
+            function addCourse(){
+                coursedb.webdb.addCourse(newCourseName); 
+            }
+
+            /* RENDER ITEMS FROM DATABASE TO HOMEPAGE, SORTED BY DATE THEN PSEUDORANK */
+            function loadHomepageEvents() {
+                var eventList = [];
+                var db = taskdb.webdb.db;
+                db.transaction(function(tx) {
+                    tx.executeSql("SELECT * FROM events", [], // get all data values
+                                  function(tx,rs) {  
+                                      for (var i=0; i < rs.rows.length; i++) {
+                                          eventList.push(rs.rows.item(i)); // put Object item in array
+                                      }
+
+                                      /* First sort by date */
+                                      eventList.sort(function(a, b) {
+                                          var aDate = (a.taskDate) ? new Date(a.taskDate).getTime() : 0;
+                                          var bDate = (b.taskDate) ? new Date(b.taskDate).getTime() : 0;
+
+                                          return aDate-bDate; // ascending order of date
+                                      });
+
+                                      /* Second sort by pseudorank. Time bump is factored in */
+                                      eventList.sort(function(a, b) {
+                                          var aRank = pseudoRank(a.priority, (a.taskDate+""), (a.taskTime+""), a.category);
+                                          var bRank = pseudoRank(b.priority, (b.taskDate+""), (b.taskTime+""), b.category);
+
+                                          return bRank-aRank; // descending order of pseudorank
+                                      });
+
+                                      var homeEvents = [$(eventText1), $(eventText2), $(eventText3), $(eventText4), $(eventText5)];
+
+                                      for (var i=0; i < homeEvents.length; i++) {
+
+                                          if (!eventList[i]) {  // If the event doesn't exist, make the div empty
+                                              /* (no longer needed, because the div has been hidden
+$(".outerTaskContainer").eq(i).text("");   
+*/
+                                          } else {  // Otherwise, dynamically create the div
+
+                                              /* shows the taskcontainer if an event exists */
+                                              $(".outerTaskContainer").eq(i).show();
+                                              var img = "resources/images/";
+                                              switch (eventList[i].category){
+                                                  case 1: img += "tw_icon_reading.png"; break;
+                                                  case 2: img += "tw_icon_pmeeting.png"; break;
+                                                  case 3: img += "tw_icon_input_assignment.png"; break;
+                                                  case 4: img += "tw_icon_quiz.png"; break;
+                                                  case 5: img += "tw_icon_exam.png"; break;
+                                                  default: img += "tw_icon_input_other.png"; break;
+                                              }
+
+                                              // Event title
+                                              homeEvents[i].text(eventList[i].title.toUpperCase());
+                                              // Event time, day, and course
+                                              $(".priority-event-time-course-day").eq(i).text(eventList[i].taskTime + 
+                                                                                              displaySplitter1(eventList[i].taskTime, eventList[i].taskDate, eventList[i].course) +
+                                                                                              eventList[i].taskDate + 
+                                                                                              displaySplitter2(eventList[i].taskTime, eventList[i].taskDate, eventList[i].course) + 
+                                                                                              eventList[i].course.toUpperCase());
+                                              // Event details (in extend)
+                                              $(".height-limiter").eq(i).text(eventList[i].description);
+                                              // Event category icon 
+                                              $(".priorityTaskIcon img").eq(i).attr("src", img);
+                                          }
+
+                                          // Make the icon's background color grey if this event is expired
+                                          var calcDate = (eventList[i].taskDate) ? eventList[i].taskDate : "00/00/0000";
+                                          var calcTime = "00:00 AM";
+                                          if (calcHours2(calcDate, calcTime) <= 0) {
+                                              changeBoxColor("c"+i);
+                                          }
+                                          // create stars for priority
+                                          if (eventList[i]) {
+                                              loadStars(eventList[i].priority, ($( "#add-star-here" + (i + 1 ))));
+                                          }
+                                      }
+                                  }, taskdb.webdb.onError);
+                });
+                return eventList; // return sorted array list of events
+            }
+
+            function changeBoxColor(className) {
+                var boxes = document.getElementsByClassName(className);   
+                for (var i=0; i < boxes.length; i++) {
+                    boxes[i].style.backgroundColor = " #bebebe";
+                }
+            }
+
+            /**** TESTING ----- RENDER ITEMS FROM DATABASE TO ALL EVENTS PAGE, SORTED BY DATE THEN PSEUDORANK *****/
+            function loadAllEventsPageEvents() {
+                var eventList = [];
+                var db = taskdb.webdb.db;
+                db.transaction(function(tx) {
+                    tx.executeSql("SELECT * FROM events", [], // get all data values
+                                  function(tx,rs) {  
+                                      for (var i=0; i < rs.rows.length; i++){ 
+                                          eventList.push(rs.rows.item(i));
+
+                                          /* First sort by date */
+                                          eventList.sort(function(a, b) {
+                                              var aDate = (a.taskDate) ? new Date(a.taskDate).getTime() : 0;
+                                              var bDate = (b.taskDate) ? new Date(b.taskDate).getTime() : 0;
+
+                                              return aDate-bDate; // ascending order of date
+                                          });
+
+                                          /* Second sort by pseudorank. Time bump is factored in */
+                                          eventList.sort(function(a, b) {
+                                              var aRank = pseudoRank(a.priority, (a.taskDate+""), (a.taskTime+""), a.category);
+                                              var bRank = pseudoRank(b.priority, (b.taskDate+""), (b.taskTime+""), b.category);
+
+                                              return bRank-aRank; // descending order of pseudorank
+                                          });
+                                      }
+
+                                      var IDcount = 0; // Counter for unique IDs (Needed for expand, complete, edit, delete)
+                                      var numEventsInHeader = 0; // Number of events under that header
+                                      // BEGIN OUTER LOOP FOR COURSE HEADERS
+                                      for (var x=0; x < uniqueCourses.length; x++) { // FOR EACH HEADER -- x for outer loop
+                                          // BEGIN INNER LOOP FOR ALL EVENTS
+                                          for (var i=0; i < eventList.length; i++){  // FOR EACH EVENT IN EVENTLIST -- i for inner loop  
+                                              // GET DETAILS OF THIS EVENT
+                                              var eventName = eventList[i].title.toUpperCase();
+                                              var eventDate = eventList[i].taskDate;   
+                                              var eventTime = eventList[i].taskTime;
+                                              var eventPriority = eventList[i].priority;
+                                              var eventCourse = (eventList[i].course);
+                                              var eventCategory = eventList[i].category;
+                                              var eventDetails = eventList[i].description;
+                                              var categIcon = "resources/images/";
+                                              switch (eventCategory){
+                                                  case 1: categIcon += "tw_icon_reading.png"; break;
+                                                  case 2: categIcon += "tw_icon_pmeeting.png"; break;
+                                                  case 3: categIcon += "tw_icon_input_assignment.png"; break;
+                                                  case 4: categIcon += "tw_icon_quiz.png"; break;
+                                                  case 5: categIcon += "tw_icon_exam.png"; break;
+                                                  default: categIcon += "tw_icon_input_other.png"; break;
+                                              }
+                                          } // END INNER LOOP THROUGH EVENT DATABASE
+                                          numEventsInHeader = 0; // set back to 0 for next header
+                                      } // END OUTER LOOP THROUGH HEADERS
+
+                                      // refresh collapsible content
+                                      $('#collapsibleContent').find('div[data-role=collapsible]').collapsible();
+                                      $('#collapsibleContent').trigger('create'); //
+                                  }, taskdb.webdb.onError);
+                });
+                return eventList; // return sorted array list of events
+            }
+
+            /* DETERMINES WHEN TO DISPLAY THE SPLITTER BETWEEN TIME, DATE, and COURSE */
+            function displaySplitter1(val1, val2, val3) {
+                if ((val1 && val3) || (val1 && val2) || (val1 && val2 && val3))
+                    return " | ";
+                else
+                    return " ";
+            }
+
+            function displaySplitter2(val1, val2, val3) {
+                if ((val2 && val3) || (val1 && val2 && val3))
+                    return " | ";
+                else
+                    return " ";
+            }        
+
+            /*************************************************************************************/
+            /***** ----------------------------- SOUNDS & AUDIO ---------------------------- *****/			
+            var completeSound = new Audio("resources/audio/Blop-Mark_DiAngelo-79054334.mp3");
+            var editSound = new Audio("resources/audio/Effect_Tick.mp3");
+            var deleteSound = new Audio("resources/audio/Woosh-Mark_DiAngelo-4778593.mp3");
+            var tapSound = new Audio("resources/audio/Effect_Tick.mp3");
+
+            function tapSoundEffect() {
+                tapSound.play();
+            }
+
+
+            /*************************************************************************************/
+            /***** --------------------------------- SHAKE --------------------------------- *****/		
+            window.addEventListener('shake', shakeEventDidOccur, false);
+
+            function shakeEventDidOccur () {
+                resetInputs();
+            }
+
+
+            /*************************************************************************************/
+            /***** --------------------------- HOMEPAGE FUNCTIONS -------------------------- *****/
+
+            /***** On click, the event box will expand to reveal event details, menu, and rank priority. *****/
+            /***** SLIDE TOGGLE *****/
+
+            /* testing to hide divs */
+            $(document).ready(function(){
+                $(".outerTaskContainer").hide();
+            });
+
+
+            /* function to hide extended event boxes when clicking the side panel to go back to the homepage */
+
+            function hideExtend() {
+                $("#extend").hide();
+                $("#extend2").hide();
+                $("#extend3").hide();
+                $("#extend4").hide();
+                $("#extend5").hide();
+            }
+
+
+            /* -------------------- */
+            var swipe1 = false;
+            var swipe2 = false;
+            var swipe3 = false;
+            var swipe4 = false;
+            var swipe5 = false;
+
+            $(document).ready(function(){
+
+                /*hides any extended divs*/
+                hideExtend();
+
+                /* animation for box 1 */
+                $("#click").on("tap",function(event){
+                    if(swipe1 == false) {
+                        tapSound.play();
+                        $(".priorityTaskContainer2").slideUp(50, "swing");
+                        if($("#extend:visible").length > 0){
+                            $("#extend").slideUp(50, "swing");
+                        } else {
+                            $("#extend").slideDown(50, "swing");
+                        }
+                    }
+                });
+
+                /* animation for box 2 */
+                $("#click2").on("tap",function(event){
+                    if(swipe2 == false) {
+                        tapSound.play();
+                        $(".priorityTaskContainer2").slideUp(50, "swing");
+                        if($("#extend2:visible").length > 0){
+                            $("#extend2").slideUp(50, "swing");
+                        } else {
+                            $("#extend2").slideDown(50, "swing");
+                        }
+                    }
+                });
+
+                /* animation for box 3 */
+                $("#click3").on("tap",function(event){
+                    if(swipe3 == false) {
+                        tapSound.play();
+                        $(".priorityTaskContainer2").slideUp(50, "swing");
+                        if($("#extend3:visible").length > 0){
+                            $("#extend3").slideUp(50, "swing");
+                        } else {
+                            $("#extend3").slideDown(50, "swing");
+                        }
+                    }
+                });
+
+                /* animation for box 4 */
+                $("#click4").on("tap",function(event){
+                    if(swipe1 == false) {
+                        tapSound.play();
+                        $(".priorityTaskContainer2").slideUp(50, "swing");
+                        if($("#extend4:visible").length > 0){
+                            $("#extend4").slideUp(50, "swing");
+                        } else {
+                            $("#extend4").slideDown(50, "swing");
+                        }
+                    }
+                });
+
+                /* animation for box 5 */
+                $("#click5").on("tap",function(event){
+                    if(swipe1 == false) {
+                        tapSound.play();
+                        $(".priorityTaskContainer2").slideUp(50, "swing");
+                        if($("#extend5:visible").length > 0){
+                            $("#extend5").slideUp(50, "swing");
+                        } else {
+                            $("#extend5").slideDown(50, "swing");
+                        }
+                    }
+                });
+
+                /* animation to close when clicked on the side */
+                $(".priority-task-icon").click(function(event){
+                    $(".priorityTaskContainer2").slideUp(50, "swing");
+                });
+            });	
+
+            /***** DYNAMIC DATE GENERATOR *****/
+            var date;
+            var day;
+            var month;
+            var currentDay;
+
+            date = new Date();
+            day = new Array("SUNDAY","MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY");
+            currentDay = day[date.getDay()];
+            month = new Array("JANUARY","FEBUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPEMBER","OCTOBER","NOVEMBER","DECEMBER");
+
+            function dateFunction() {
+                document.getElementById("dateBox").innerHTML = ("TODAY IS " + "</br>" + "<span id='day'>" + currentDay + "</span>" + "</br><hr>" + "<span id='totalDate'>" + month[date.getMonth()] + " " + "<span id='date'>" + date.getDate() + "</span>" + " " + date.getFullYear()) + "</span>";
+            }
+
+            /***** Event Menu Animations *****/
+
+            /* Homepage Completed */ 
+            function homepageCompleteTask(id) {
+
+                document.getElementById("eventText" + id).style.color="#39B54A";
+                document.getElementById("eventText" + id).style.fontSize="1.5em";
+
+                $('#eventText' + id).fadeTo('slow', 0.4, function() {
+                });
+
+                completeSound.play();
+                document.getElementById('homepageDoneImg' + id).src='resources/images/tw_icon_completeEventGreen.png';
+
+                $('#priorityEvent' + id).animate({ opacity: 0, left: '-100%' }, 500);
+                $('.completeSwipeContainer').hide();
+
+                setTimeout(function() {
+                    document.getElementById('priorityEvent' + id).remove();
+                    $('.completeSwipeContainer').show();
+                }, 1000);
+            }
+
+            /* Homepage Deleted */
+            function homepageDeleteTask(id) {
+
+                $('#eventText' + id).fadeTo('slow', 0.4, function() {
+                });
+
+                //taskdb.webdb.deleteTodo(" + row.ID +");
+                deleteSound.play();
+                document.getElementById('homepageDeleteImg' + id).src='resources/images/tw_icon_trashRed.png';
+
+                $('#priorityEvent' + id).animate({ opacity: 0, left: '100%' }, 500);
+                $('.deleteSwipeContainer').hide();
+
+                setTimeout(function() {
+                    document.getElementById('priorityEvent' + id).remove();
+                    $('.deleteSwipeContainer').show();
+                }, 1000);
+            }
+
+            /* Deleted via Swipe */
+            /*event 1*/
+            $(function() {
+
+                var IMG_WIDTH = 0,
+                    currentImg = 0,
+                    speed = 500,
+                    imgs = $("#priorityEvent1");
+
+                // activates swipe plugin function
+                imgs.swipe({
+                    triggerOnTouchEnd : true,
+                    swipeStatus : swipeStatus
+                });
+
+                function swipeStatus(event, phase, direction, distance, fingers) {
+
+                    if( phase=="move" && (direction=="left" ||direction=="right" ) ) {
+                        var duration=0;
+                        swipe1 = true;
+                        if (direction == "right") {
+                            scrollImages((IMG_WIDTH * currentImg) - distance, duration);
+                            $("#priorityEvent1 > :not(.deleteSwipeContainer)").css("opacity", (1 / distance * 80));
+                        }
+
+                        else if (direction == "left") {
+                            scrollImages((IMG_WIDTH * currentImg) + distance, duration);
+                            $("#priorityEvent1 > :not(.completeSwipeContainer)").css("opacity", (1 / distance * 80));
+                        }
+                    }
+
+                    // activates function if swipe is a distance of 100
+                    else if ( distance > 100  && direction=="right" ) {
+                        $('#eventText1').fadeTo('slow', 0.4, function() {
+                        });
+
+                        deleteSound.play();
+                        document.getElementById('homepageDeleteImg1').src='resources/images/tw_icon_trashRed.png';
+
+                        $('#priorityEvent1').animate({ opacity: 0, left: '100%' }, 400);
+                        pageRefreshSwipeDelete();
+
+                        setTimeout(function() {
+                            document.getElementById('priorityEvent1').remove();
+                            taskdb.webdb.deletePriorityTodo(0);
+                        }, 600);
+                    }
+
+                    else if ( distance > 100  && direction=="left" ) {
+                        $('#eventText1').fadeTo('slow', 0.4, function() {
+                        });
+
+                        completeSound.play();
+                        document.getElementById('homepageDeleteImg1').src='resources/images/tw_icon_completeEventGreen.png';
+
+                        $('#priorityEvent1').animate({ opacity: 0, left: '-100%' }, 400);
+                        pageRefreshSwipeDelete();
+
+                        setTimeout(function() {
+                            document.getElementById('priorityEvent1').remove();
+                            taskdb.webdb.deletePriorityTodo(0);
+
+                        }, 600);
+                    }
+
+                    // returns to original
+                    else if ( phase =="end" ) {
+                        scrollImages( IMG_WIDTH * currentImg, speed);
+                        $("#priorityEvent1").css("opacity", 1);
+                        setTimeout(function() {
+                            swipe1 = false;
+                        }, 100);
+                    }
+                }
+
+                fingers:'all'
+
+                function scrollImages(distance, duration) {
+                    imgs.css("-webkit-transition-duration", (duration/1000).toFixed(1) + "s");
+                    var value = (distance<0 ? "" : "-") + Math.abs(distance).toString();
+                    imgs.css("-webkit-transform", "translate3d("+value +"px,0px,0px)");
+                }
+            });
+
+            /*event 2*/
+            $(function() {
+
+                var IMG_WIDTH = 0,
+                    currentImg = 0,
+                    speed = 500,
+                    imgs = $("#priorityEvent2");
+
+                imgs.swipe({
+                    triggerOnTouchEnd : true,
+                    swipeStatus : swipeStatus
+                });
+
+                function swipeStatus(event, phase, direction, distance, fingers) {
+
+                    if( phase=="move" && (direction=="left" ||direction=="right" ) ) {
+                        var duration=0;
+                        if (direction == "right") {
+                            scrollImages((IMG_WIDTH * currentImg) - distance, duration);
+                            $("#priorityEvent2 > :not(.deleteSwipeContainer)").css("opacity", (1 / distance * 80));
+                        }
+
+                        else if (direction == "left") {
+                            scrollImages((IMG_WIDTH * currentImg) + distance, duration);
+                            $("#priorityEvent2 > :not(.completeSwipeContainer)").css("opacity", (1 / distance * 80));
+                        }
+                    }
+
+                    // activates function if swipe is a distance of 100
+                    else if ( distance > 100  && direction=="right" ) {
+                        $('#eventText2').fadeTo('slow', 0.4, function() {
+                        });
+
+                        deleteSound.play();
+                        document.getElementById('homepageDeleteImg2').src='resources/images/tw_icon_trashRed.png';
+
+                        $('#priorityEvent2').animate({ opacity: 0, left: '100%' }, 400);
+                        pageRefreshSwipeDelete();
+
+                        setTimeout(function() {
+                            document.getElementById('priorityEvent2').remove();
+                            taskdb.webdb.deletePriorityTodo(1);
+                        }, 600);
+                    }
+
+                    else if ( distance > 100  && direction=="left" ) {
+                        $('#eventText2').fadeTo('slow', 0.4, function() {
+                        });
+
+                        completeSound.play();
+                        document.getElementById('homepageDeleteImg2').src='resources/images/tw_icon_completeEventGreen.png';
+
+                        $('#priorityEvent2').animate({ opacity: 0, left: '-100%' }, 400);
+                        pageRefreshSwipeDelete();
+
+                        setTimeout(function() {
+                            document.getElementById('priorityEvent2').remove();
+                            taskdb.webdb.deletePriorityTodo(1);
+                        }, 600);
+                    }
+
+                    // returns to original
+                    else if ( phase =="end" ) {
+                        scrollImages( IMG_WIDTH * currentImg, speed);
+                        $("#priorityEvent2").css("opacity", 1);
+                        setTimeout(function() {
+                            swipe2 = false;
+                        }, 100);
+                    }
+                }
+
+                fingers:'all'
+
+                function scrollImages(distance, duration) {
+                    imgs.css("-webkit-transition-duration", (duration/1000).toFixed(1) + "s");
+                    var value = (distance<0 ? "" : "-") + Math.abs(distance).toString();
+                    imgs.css("-webkit-transform", "translate3d("+value +"px,0px,0px)");
+                }
+            });
+
+            /*event 3*/
+            $(function() {
+
+                var IMG_WIDTH = 0,
+                    currentImg = 0,
+                    speed = 500,
+                    imgs = $("#priorityEvent3");
+
+                imgs.swipe({
+                    triggerOnTouchEnd : true,
+                    swipeStatus : swipeStatus
+                });
+
+                function swipeStatus(event, phase, direction, distance, fingers) {
+
+                    if( phase=="move" && (direction=="left" ||direction=="right" ) ) {
+                        var duration=0;
+                        if (direction == "right") {
+                            scrollImages((IMG_WIDTH * currentImg) - distance, duration);
+                            $("#priorityEvent3 > :not(.deleteSwipeContainer)").css("opacity", (1 / distance * 80));
+                        }
+
+                        else if (direction == "left") {
+                            scrollImages((IMG_WIDTH * currentImg) + distance, duration);
+                            $("#priorityEvent3 > :not(.completeSwipeContainer)").css("opacity", (1 / distance * 80));
+                        }
+                    }
+
+                    // activates function if swipe is a distance of 100
+                    else if ( distance > 100  && direction=="right" ) {
+                        $('#eventText3').fadeTo('slow', 0.4, function() {
+                        });
+
+                        deleteSound.play();
+                        document.getElementById('homepageDeleteImg3').src='resources/images/tw_icon_trashRed.png';
+
+                        $('#priorityEvent3').animate({ opacity: 0, left: '100%' }, 400);
+                        pageRefreshSwipeDelete();
+
+                        setTimeout(function() {
+                            document.getElementById('priorityEvent3').remove();
+                            taskdb.webdb.deletePriorityTodo(2);
+                        }, 600);
+                    }
+
+                    else if ( distance > 100  && direction=="left" ) {
+                        $('#eventText3').fadeTo('slow', 0.4, function() {
+                        });
+
+                        completeSound.play();
+                        document.getElementById('homepageDeleteImg3').src='resources/images/tw_icon_completeEventGreen.png';
+
+                        $('#priorityEvent3').animate({ opacity: 0, left: '-100%' }, 400);
+                        pageRefreshSwipeDelete();
+
+                        setTimeout(function() {
+                            document.getElementById('priorityEvent3').remove();
+                            taskdb.webdb.deletePriorityTodo(2);
+                        }, 600);
+                    }
+
+                    // returns to original
+                    else if ( phase =="end" ) {
+                        scrollImages( IMG_WIDTH * currentImg, speed);
+                        $("#priorityEvent3").css("opacity", 1);
+                        setTimeout(function() {
+                            swipe3 = false;
+                        }, 100);
+                    }
+                }
+
+                fingers:'all'
+
+                function scrollImages(distance, duration) {
+                    imgs.css("-webkit-transition-duration", (duration/1000).toFixed(1) + "s");
+                    var value = (distance<0 ? "" : "-") + Math.abs(distance).toString();
+                    imgs.css("-webkit-transform", "translate3d("+value +"px,0px,0px)");
+                }
+            });
+
+            /*event 4*/
+            $(function() {
+
+                var IMG_WIDTH = 0,
+                    currentImg = 0,
+                    speed = 500,
+                    imgs = $("#priorityEvent4");
+
+                imgs.swipe({
+                    triggerOnTouchEnd : true,
+                    swipeStatus : swipeStatus
+                });
+
+                function swipeStatus(event, phase, direction, distance, fingers) {
+
+                    if( phase=="move" && (direction=="left" ||direction=="right" ) ) {
+                        var duration=0;
+                        if (direction == "right") {
+                            scrollImages((IMG_WIDTH * currentImg) - distance, duration);
+                            $("#priorityEvent4 > :not(.deleteSwipeContainer)").css("opacity", (1 / distance * 80));
+                        }
+
+                        else if (direction == "left") {
+                            scrollImages((IMG_WIDTH * currentImg) + distance, duration);
+                            $("#priorityEvent4 > :not(.completeSwipeContainer)").css("opacity", (1 / distance * 80));
+                        }
+                    }
+
+                    // activates function if swipe is a distance of 100
+                    else if ( distance > 100  && direction=="right" ) {
+                        $('#eventText4').fadeTo('slow', 0.4, function() {
+                        });
+
+                        deleteSound.play();
+                        document.getElementById('homepageDeleteImg4').src='resources/images/tw_icon_trashRed.png';
+
+                        $('#priorityEvent4').animate({ opacity: 0, left: '100%' }, 400);
+                        pageRefreshSwipeDelete();
+
+                        setTimeout(function() {
+                            document.getElementById('priorityEvent4').remove();
+                            taskdb.webdb.deletePriorityTodo(3);
+                        }, 600);
+                    }
+
+                    else if ( distance > 100  && direction=="left" ) {
+                        $('#eventText4').fadeTo('slow', 0.4, function() {
+                        });
+
+                        completeSound.play();
+                        document.getElementById('homepageDeleteImg4').src='resources/images/tw_icon_completeEventGreen.png';
+
+                        $('#priorityEvent4').animate({ opacity: 0, left: '-100%' }, 400);
+                        pageRefreshSwipeDelete();
+
+                        setTimeout(function() {
+                            document.getElementById('priorityEvent4').remove();
+                            taskdb.webdb.deletePriorityTodo(3);
+                        }, 600);
+                    }
+
+                    // returns to original
+                    else if ( phase =="end" ) {
+                        scrollImages( IMG_WIDTH * currentImg, speed);
+                        $("#priorityEvent4").css("opacity", 1);
+                        setTimeout(function() {
+                            swipe4 = false;
+                        }, 100);
+                    }
+                }
+
+                fingers:'all'
+
+                function scrollImages(distance, duration) {
+                    imgs.css("-webkit-transition-duration", (duration/1000).toFixed(1) + "s");
+                    var value = (distance<0 ? "" : "-") + Math.abs(distance).toString();
+                    imgs.css("-webkit-transform", "translate3d("+value +"px,0px,0px)");
+                }
+            });
+
+            /*event 5*/
+            $(function() {
+
+                var IMG_WIDTH = 0,
+                    currentImg = 0,
+                    speed = 500,
+                    imgs = $("#priorityEvent5");
+
+                imgs.swipe({
+                    triggerOnTouchEnd : true,
+                    swipeStatus : swipeStatus
+                });
+
+                function swipeStatus(event, phase, direction, distance, fingers) {
+
+                    if( phase=="move" && (direction=="left" ||direction=="right" ) ) {
+                        var duration=0;
+                        if (direction == "right") {
+                            scrollImages((IMG_WIDTH * currentImg) - distance, duration);
+                            $("#priorityEvent5 > :not(.deleteSwipeContainer)").css("opacity", (1 / distance * 80));
+                        }
+
+                        else if (direction == "left") {
+                            scrollImages((IMG_WIDTH * currentImg) + distance, duration);
+                            $("#priorityEvent5 > :not(.completeSwipeContainer)").css("opacity", (1 / distance * 80));
+                        }
+                    }
+
+                    // activates function if swipe is a distance of 100
+                    else if ( distance > 100  && direction=="right" ) {
+                        $('#eventText5').fadeTo('slow', 0.4, function() {
+                        });
+
+                        deleteSound.play();
+                        document.getElementById('homepageDeleteImg5').src='resources/images/tw_icon_trashRed.png';
+
+                        $('#priorityEvent5').animate({ opacity: 0, left: '100%' }, 400);
+                        pageRefreshSwipeDelete();
+
+                        setTimeout(function() {
+                            document.getElementById('priorityEvent5').remove();
+                            taskdb.webdb.deletePriorityTodo(4);
+                        }, 600);
+                    }
+
+                    else if ( distance > 100  && direction=="left" ) {
+                        $('#eventText5').fadeTo('slow', 0.4, function() {
+                        });
+
+                        completeSound.play();
+                        document.getElementById('homepageDeleteImg5').src='resources/images/tw_icon_completeEventGreen.png';
+
+                        $('#priorityEvent5').animate({ opacity: 0, left: '-100%' }, 400);
+                        pageRefreshSwipeDelete();
+
+                        setTimeout(function() {
+                            document.getElementById('priorityEvent5').remove();
+                            taskdb.webdb.deletePriorityTodo(4);
+                        }, 600);
+                    }
+
+                    // returns to original
+                    else if ( phase =="end" ) {
+                        scrollImages( IMG_WIDTH * currentImg, speed);
+                        $("#priorityEvent5").css("opacity", 1);
+                        setTimeout(function() {
+                            swipe5 = false;
+                        }, 100);
+                    }
+                }
+
+                fingers:'all'
+
+                function scrollImages(distance, duration) {
+                    imgs.css("-webkit-transition-duration", (duration/1000).toFixed(1) + "s");
+                    var value = (distance<0 ? "" : "-") + Math.abs(distance).toString();
+                    imgs.css("-webkit-transform", "translate3d("+value +"px,0px,0px)");
+                }
+            });
+
+            /***** FUNCTIONS TO EDIT EVENTS FOR HOMEPAGE *****/
+            function homepageEditTask(id) {
+
+                document.getElementById('homepageEditImg' + id).src='resources/images/tw_icon_editEventRoll.png';
+
+                setTimeout(function() {
+                    window.location.href = '#newEvent';
+                    document.getElementById('homepageEditImg' + id).src='resources/images/tw_icon_editEvent.png';
+                }, 300);
+
+                editEventDetails(id-1); // we -1 here because editEventDetails() requires the index of a database, while the homepageEditTask() simply references a set of IDS from 1-5
+            }
+
+            function loadEventDetails(tx,rs) {
+                var title;
+                var priority;
+                var date;
+                var time;
+                var course;
+                var category;
+                var description;
+
+                //Retrieve event values
+                existingID = rs.rows.item(0).ID; // without this ID, it will simply save a new Event
+                title = rs.rows.item(0).title;
+                priority = rs.rows.item(0).priority;
+                date = rs.rows.item(0).taskDate;
+                time = rs.rows.item(0).taskTime;
+                course = rs.rows.item(0).course;
+                category = rs.rows.item(0).category;
+                description = rs.rows.item(0).description;
+
+                /***** load events into input page *****/
+                //Loads title
+                $('#eventName').val(title);
+
+                //Loads priority
+                switch (priority) {
+                    case 1:
+                        star1(); // draws 1 filled star
+                        break;
+                    case 2:
+                        star2(); // draws 2 filled stars
+                        break;
+                    case 3:
+                        star3(); // draws 3 filled stars
+                        break;
+                    default:
+                        break; // empty stars
+                }
+
+                //Loads date
+                $('#datepicker').val(date);
+
+                //Loads time
+                $('#demo').val(time);
+
+                //Loads course
+                if (course == ""){
+                    course == "Select a Course";   
+                } else {
+                    $('#coursePopupText').text(course);
+                }
+
+                //Loads category
+                switch (category) {
+                    case 1:
+                        $('#categoryPopupText').text('Reading');
+                        break;
+                    case 2:
+                        $('#categoryPopupText').text('Project Meeting');
+                        break;
+                    case 3:
+                        $('#categoryPopupText').text('Assignment');
+                        break;
+                    case 4:
+                        $('#categoryPopupText').text('Quiz');
+                        break;
+                    case 5:
+                        $('#categoryPopupText').text('Exam');
+                        break;
+                    case 6:
+                        $('#categoryPopupText').text('Other');
+                        break;
+                    default:
+                        break;
+                }
+
+                //Loads description
+                $('#details').val(description);
+
+                //Set the color of the Save button depending on whether a title exists
+                checkTitle();
+            }
+
+            function editEventDetails(dbId) {
+
+                var db = taskdb.webdb.db;
+                var eventList = loadHomepageEvents(); // gets all the events from database
+                db.transaction(function(tx){
+                    tx.executeSql("SELECT * FROM events WHERE ID=?", [eventList[dbId].ID],  // finds the event where ID matches and loads the details
+                                  loadEventDetails, taskdb.webdb.onError);
+                });
+            }
+
+            /***** FUNCTIONS TO EDIT EVENTS FOR ALL EVENTS PAGE *****/
+
+            function allEventsEditTask(id, dbId) {
+
+                document.getElementById('eventsEditImg' + id).src='resources/images/tw_icon_editEventRoll.png';
+
+                setTimeout(function() {
+                    window.location.href = '#newEvent';
+                    document.getElementById('eventsEditImg' + id).src='resources/images/tw_icon_editEvent.png';
+                }, 300);
+
+                allEventsEditEventDetails(dbId); 
+            }
+
+            function loadAllEventDetails(tx,rs) {
+                var title;
+                var priority;
+                var date;
+                var time;
+                var course;
+                var category;
+                var description;
+
+                //Retrieve event values
+                existingID = rs.rows.item(0).ID; // without this ID, it will simply save a new Event
+                title = rs.rows.item(0).title;
+                priority = rs.rows.item(0).priority;
+                date = rs.rows.item(0).taskDate;
+                time = rs.rows.item(0).taskTime;
+                course = rs.rows.item(0).course;
+                category = rs.rows.item(0).category;
+                description = rs.rows.item(0).description;
+
+                /***** load events into input page *****/
+                //Loads title
+                $('#eventName').val(title);
+
+                //Loads priority
+                switch (priority) {
+                    case 1:
+                        star1(); // draws 1 filled star
+                        break;
+                    case 2:
+                        star2(); // draws 2 filled stars
+                        break;
+                    case 3:
+                        star3(); // draws 3 filled stars
+                        break;
+                    default:
+                        break; // empty stars
+                }
+
+                //Loads date
+                $('#datepicker').val(date);
+
+                //Loads time
+                $('#demo').val(time);
+
+                //Loads course
+                if (course == ""){
+                    course == "Select a Course";   
+                } else {
+                    $('#coursePopupText').text(course);
+                }
+
+                //Loads category
+                switch (category) {
+                    case 1:
+                        $('#categoryPopupText').text('Reading');
+                        break;
+                    case 2:
+                        $('#categoryPopupText').text('Project Meeting');
+                        break;
+                    case 3:
+                        $('#categoryPopupText').text('Assignment');
+                        break;
+                    case 4:
+                        $('#categoryPopupText').text('Quiz');
+                        break;
+                    case 5:
+                        $('#categoryPopupText').text('Exam');
+                        break;
+                    case 6:
+                        $('#categoryPopupText').text('Other');
+                        break;
+                    default:
+                        break;
+                }
+
+                //Loads description
+                $('#details').val(description);
+
+                //Set the color of the Save button
+                checkTitle();
+            }
+
+            function allEventsEditEventDetails(index) {
+                var db = taskdb.webdb.db;
+                var eventList = loadAllEventsPageEvents(); // gets all the events from database
+
+                db.transaction(function(tx){
+                    tx.executeSql("SELECT * FROM events WHERE ID=?", [index],  // finds the event where ID matches and loads the details
+                                  loadAllEventDetails, taskdb.webdb.onError);
+                });
+            }
+
+            /***** FUNCTIONS TO DELETE EVENTS FOR ALL EVENTS PAGE *****/
+
+            function allEventsDeleteTask(id, dbId) {
+                var eventTextSelector = $('#task' + id + ' .priority-eventTitle');
+                var eventDeleteImg  = $('#expandbox' + id + ' #deleteImg' + id);
+
+                $('#eventTitleText' + id).fadeTo('slow', 0.4, function() {
+                });
+
+                deleteSound.play();
+                eventDeleteImg.attr('src', 'resources/images/tw_icon_trashRed.png');
+
+                $('#task' + id).animate({ opacity: 0, left: '100%' }, 500);
+
+                setTimeout(function() {
+                    document.getElementById('task' + id).remove();
+                }, 1000);
+
+                //put delete function here
+                allEventsDeleteEvent(dbId);
+            }
+
+            function allEventsDeleteEvent(index) {
+                var db = taskdb.webdb.db;
+
+                db.transaction(function(tx){
+                    tx.executeSql("DELETE FROM events WHERE ID=?", [index],  // finds the event where ID matches and deletes it
+                                  taskdb.webdb.onSuccess,
+                                  taskdb.webdb.onError);
+                });
+            }
+
+            /***** FUNCTIONS TO COMPLETE EVENTS FOR ALL EVENTS PAGE *****/
+
+            function allEventsCompleteTask(id, dbId) {
+                var eventTextSelector = $('#task' + id + ' .priority-eventTitle');
+                var eventCompleteImg  = $('#expandbox' + id + ' #homepageDoneImg' + id);
+
+                eventTextSelector.css('color', '#39B54A');
+                eventTextSelector.css('fontSize', '#1.5em');
+
+                $('#eventTitleText' + id).fadeTo('slow', 0.4, function() {
+                });
+
+                completeSound.play();
+                eventCompleteImg.attr('src', 'resources/images/tw_icon_completeEventGreen.png');
+
+                $('#task' + id).animate({ opacity: 0, left: '-100%' }, 500);
+
+                setTimeout(function() {
+                    document.getElementById('task' + id).remove();
+                }, 1000);
+
+                allEventsCompleteEvent(dbId);
+            }
+
+            function allEventsCompleteEvent(index) {
+                var db = taskdb.webdb.db;
+
+                db.transaction(function(tx){
+                    tx.executeSql("DELETE FROM events WHERE ID=?", [index],  // finds the event where ID matches and deletes it
+                                  taskdb.webdb.onSuccess,
+                                  taskdb.webdb.onError);
+                });
+            }
+
+            /***** TASK  *****/
+            function expandFunction(id) {
+
+                tapSound.play();
+                $(".priorityTaskContainer2").slideUp(50, "swing");
+
+                if($("#expand"+ id +":visible").length > 0){
+                    $("#expand"+ id).slideUp(50, "swing");
+                } else {
+                    $("#expand"+ id).slideDown(50, "swing");
+                }
+
+                $(".priority-task-icon").click(function(event){
+                    $(".priorityTaskContainer2").slideUp(50, "swing");
+                });
+            }
+
+            /***************************************************************************************/
+            /***** ----------------------------------- HELP ---------------------------------- *****/
+
+            $(document).ready(function() {	
+                $(".goToHelp").click(function(event){
+                    localStorage.setItem("helpPage", "true");				
+                });
+            });
+
+            if (localStorage.getItem("helpPage") == "true" || localStorage.getItem("helpPage") == undefined) {
+                window.location.href = "#help";
+            }
+
+            function doneHelp(id) {
+                localStorage.setItem("helpPage", "false");
+            }
+
+            /* ============================= FEEDBACK PAGE FUNCTIONS =============================*/
+            /*----- field focus animation -----*/
+
+            /* title field */
+            $(document).ready(function() {
+                $('#userEmail').bind('focus', function() {
+                    $('#email-border').addClass('blue');
+                });
+                $('#userEmail').bind('blur', function() {
+                    $('#email-border').removeClass('blue');
+                });
+            });
+
+            /* description field */
+            $(document).ready(function() {
+                $('#feedbackDetails').bind('focus', function() {
+                    $('#feedback-details-border').addClass('blue');
+                });
+                $('#feedbackDetails').bind('blur', function() {
+                    $('#feedback-details-border').removeClass('blue');
+                });
+            });
+
+            /* ============================= INPUT PAGE JAVASCRIPT - DATEPICKER =============================*/
+            $(function(){
+                $('#demo').mobiscroll().time({
+                    theme: 'android-ics light',
+                    display: 'modal',
+                    mode: 'scroller',
+                    setText: false,
+                    cancelText: false,
+                    headerText: false
+                });    
+                $('#show').click(function(){
+                    $('#demo').mobiscroll('show'); 
+                    return false;
+                });
+                $('#clear').click(function () {
+                    $('#demo').val('');
+                    return false;
+                });
+
+                $('#datepicker').mobiscroll().date({
+                    theme: 'android-ics light',
+                    display: 'modal',
+                    mode: 'scroller'
+                });    
+
+                $('#datepickericon').mobiscroll().date({
+                    theme: 'android-ics light',
+                    display: 'modal',
+                    mode: 'scroller'
+                });    
+                $('#dateShow').click(function(){
+                    $('#datepicker').mobiscroll('dateShow'); 
+                    return false;
+                });
+                $('#dateClear').click(function () {
+                    $('#datepicker').val('');
+                    return false;
+                });
+            });
+
+            /*============================= PAGE REFRESHERS =============================*/
+
+            /***** USED TO REFRESH THE PAGE TO UPDATE DYNAMICALLY ADDED / REMOVED EVENTS *****/
+            /***** note: timeout needs to be ~100ms or else the refresh may not work *****/ 
+            function pageRefresh() {
+                window.setTimeout('location.reload(true)', 100);
+            }
+
+            function pageRefreshComplete() {
+                window.setTimeout('location.reload(true)', 1000);
+            }
+
+            function pageRefreshDelete() {
+                window.setTimeout('location.reload(true)', 1000);
+            }
+
+            function pageRefreshSwipeDelete() {
+                window.setTimeout('location.reload(true)', 700);
+            }
+
+            function pageRefreshAllEvents() {
+                window.setTimeout('location.reload(true)', 1);
+            }
+
+            /*=========================================================================================*/
+
+            /*=== oscar's section ====*/
+
+            $(document).ready(function () {
+                $("#sidePanelButton").mousedown(function () {
+                    $('#sidePanelButton').attr('src', 'resources/images/tw_icon_sidenav_rollover.png');
+                });
+                $("#sidePanelButton").mouseup(function () {
+                    $('#sidePanelButton').attr('src', 'resources/images/tw_icon_sidenav.png');
+                });
+            });
+
+            $(document).ready(function () {
+                $("#homepageAddButton").mousedown(function () {
+                    $('#homepageAddButton').attr('src', 'resources/images/tw_icon_addevent_rollover.png');
+                });
+                $("#homepageAddButton").mouseup(function () {
+                    $('#homepageAddButton').attr('src', 'resources/images/tw_icon_addevent.png');
+                });
+            });
+        </script>
+    </head> 
+    <body onload="dateFunction(); init();">
+        <div id="main">
+
+
+            <!--//////////////////////////////////////  HOMEPAGE   //////////////////////////////////////////-->
+
+            <div data-role="page" id="homepage">
+
+                <!-------------- SIDE PANEL NAVIGATION --------------->
+                <div data-role="panel" id="leftpanel1" data-position="left" data-display="push" onload="pageRefresh();">
+
+                    <!--Header-->
+                    <div id="navHeader" data-position="left">
+                        <div><img id="sidePanelLogo" src="resources/images/tw_icon_sidepanel_logo.png"></div>
+                        <div id="title">TimeWhale</div>
+                    </div>
+
+                    <!--Navigation Options-->
+                    <ul id="navMenu">
+                        <li class="primaryNav" onclick="hideExtend();">
+                            <a id="currentlyActive" href="#homepage"><div><img class="mainIcon" src="resources/images/tw_icon_sidepanel_home.png">Home</div></a>
+                        </li>
+                        <li class="primaryNav">
+                            <a onclick="tapSoundEffect();" href="#newEvent" data-transition="none"><div><img class="mainIcon" src="resources/images/tw_icon_sidepanel_add.png">Add</div></a>
+                        </li>
+                        <li class="primaryNav">
+                            <a onclick="prev = 2; tapSoundEffect(); pageRefreshAllEvents();" href="#allEvents" data-transition="none"><div><img class="mainIcon" src="resources/images/tw_icon_sidepanel_viewall.png">View All Events</div></a>
+                        </li>
+                        <li class="secondaryNav">
+                            <a onclick="tapSoundEffect();" class="goToHelp" href="#help" data-transition="none"><div><img class="smallerIcon" src="resources/images/tw_icon_sidepanel_help.png">HELP</div></a>
+                        </li>
+                        <li class="secondaryNav">
+                            <a onclick="tapSoundEffect();" href="#feedback" data-transition="none"><div><img class="smallerIcon" src="resources/images/tw_icon_sidepanel_feedback.png">ABOUT / FEEDBACK</div></a>
+                        </li>		
+                    </ul> 
+                </div>
+                <!--End of Panel-->
+
+                <!--Content-->
+                <div data-role="content" class="content" id="pageRefresher">
+                    <div id="banner">
+                        <a onclick="tapSoundEffect();" href="#leftpanel1"><div><img id="sidePanelButton" src="resources/images/tw_icon_sidenav.png" onclick="sidePanelButtonChange()"></div></a>
+                        <a onclick="tapSoundEffect();" href="#newEvent" data-transition="none"><div><img onclick="resetInputs();" id="homepageAddButton" src="resources/images/tw_icon_addevent.png"></div></a>
+                        <div id="dateBox"></div>
+                    </div>
+
+                    <!--DIVS FOR THE 5 PRIORITY TASKS-->
+                    <!--Warning: click and extend must be IDs because they are triggered by 5 separate animations in javascript-->
+                    <div id="priorityEvent1" class="outerTaskContainer">
+                        <div class="deleteSwipeContainer">
+                            <img class="deleteSwipeIcon" src="resources/images/tw_icon_trash_Slider.png">
+                        </div>
+                        <div class="completeSwipeContainer">
+                            <img class="completeSwipeIcon" src="resources/images/tw_icon_complete_slider.png">
+                        </div>
+                        <div id="click" class="priorityTaskContainer">
+                            <div id="color1" class="priorityTaskIcon c0">
+                                <img src=""> <!-- EVENT CATEGORY ICON -->
+                            </div>
+                            <div class="priorityTask">
+                                <table class="priority-event-title-and-course">
+                                    <tr>
+                                        <td class="priority-eventTitle"><div id="eventText1" class="textOverflow"></div></td> <!-- EVENT TITLE -->
+                                    </tr>
+                                    <tr>
+                                        <td class="priority-event-time-course-day"></td> <!-- EVENT COURSE/TIME/DATE -->
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div id="extend" class="priorityTaskContainer2">
+                            <div class="priorityTask2">
+                                <table class="priority-description-and-menu">
+                                    <tr>
+                                        <td id="color1" class="priority-task-icon c0"></td><td colspan=4 class="priority-description">
+                                        <div class="height-limiter"></div> <!-- EVENT DESCRIPTION -->
+                                        </td>
+                                    </tr>
+                                    <tr class="priority-edit-menu">
+                                        <td id="color1" class="priority-task-icon c0" onclick="tapSoundEffect();"></td>
+                                        <td class="priority-edit-menu-buttons"><img id="homepageDoneImg1" src="resources/images/tw_icon_completeEvent.png" onmousedown="homepageCompleteTask(1); taskdb.webdb.deletePriorityTodo(0); pageRefreshComplete();"></td>
+                                        <td class="priority-edit-menu-buttons"><img id="homepageEditImg1" src="resources/images/tw_icon_editEvent.png" onmousedown="homepageEditTask(1);"></td>
+                                        <td class="priority-edit-menu-buttons"><img id="homepageDeleteImg1" src="resources/images/tw_icon_removeEvent.png" onmousedown="homepageDeleteTask(1); taskdb.webdb.deletePriorityTodo(0); pageRefreshDelete();"></td>
+                                        <td class="priority-rank" >
+                                            <div id="add-star-here1">
+                                            </td>
+                                        </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="priorityEvent2" class="outerTaskContainer">
+                        <div class="deleteSwipeContainer">
+                            <img class="deleteSwipeIcon" src="resources/images/tw_icon_trash_Slider.png">
+                        </div>
+                        <div class="completeSwipeContainer">
+                            <img class="completeSwipeIcon" src="resources/images/tw_icon_complete_slider.png">
+                        </div>
+                        <div id="click2" class="priorityTaskContainer">
+                            <div id="color2" class="priorityTaskIcon c1">
+                                <img src="">
+                            </div>
+                            <div class="priorityTask">
+                                <table class="priority-event-title-and-course">
+                                    <tr>
+                                        <td class="priority-eventTitle"><div id="eventText2" class="textOverflow"></div></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="priority-event-time-course-day"></td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div id="extend2" class="priorityTaskContainer2">
+                            <div class="priorityTask2">
+                                <table class="priority-description-and-menu">
+                                    <tr>
+                                        <td id="color2" class="priority-task-icon c1"></td><td colspan=4 class="priority-description">
+                                        <div class="height-limiter"></div>
+                                        </td>
+                                    </tr>
+                                    <tr class="priority-edit-menu">
+                                        <td id="color2" class="priority-task-icon c1" onclick="tapSoundEffect();"></td>
+                                        <td class="priority-edit-menu-buttons"><img id="homepageDoneImg2" src="resources/images/tw_icon_completeEvent.png" onmousedown="homepageCompleteTask(2); taskdb.webdb.deletePriorityTodo(1); pageRefreshComplete();"></td>
+                                        <td class="priority-edit-menu-buttons"><img id="homepageEditImg2" src="resources/images/tw_icon_editEvent.png" onmousedown="homepageEditTask(2);"></td>
+                                        <td class="priority-edit-menu-buttons"><img id="homepageDeleteImg2" src="resources/images/tw_icon_removeEvent.png" onmousedown="homepageDeleteTask(2); taskdb.webdb.deletePriorityTodo(1); pageRefreshDelete();"></td>
+                                        <td class="priority-rank">
+                                            <div id="add-star-here2">
+
+                                            </td>
+                                        </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="priorityEvent3" class="outerTaskContainer">
+                        <div class="deleteSwipeContainer">
+                            <img class="deleteSwipeIcon" src="resources/images/tw_icon_trash_Slider.png">
+                        </div>
+                        <div class="completeSwipeContainer">
+                            <img class="completeSwipeIcon" src="resources/images/tw_icon_complete_slider.png">
+                        </div>
+                        <div id="click3" class="priorityTaskContainer">
+                            <div id="color3" class="priorityTaskIcon c2">
+                                <img src="">
+                            </div>
+                            <div class="priorityTask">
+                                <table class="priority-event-title-and-course">
+                                    <tr>
+                                        <td class="priority-eventTitle"><div id="eventText3" class="textOverflow"></div></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="priority-event-time-course-day"></td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div id="extend3" class="priorityTaskContainer2">
+                            <div class="priorityTask2">
+                                <table class="priority-description-and-menu">
+                                    <tr>
+                                        <td id="color3" class="priority-task-icon c2"></td><td colspan=4 class="priority-description">
+                                        <div class="height-limiter"></div>
+                                        </td>
+                                    </tr>
+                                    <tr class="priority-edit-menu">
+                                        <td id="color3" class="priority-task-icon c2" onclick="tapSoundEffect();"></td>
+                                        <td class="priority-edit-menu-buttons"><img id="homepageDoneImg3" src="resources/images/tw_icon_completeEvent.png" onmousedown="homepageCompleteTask(3); taskdb.webdb.deletePriorityTodo(2); pageRefreshComplete();"></td>
+                                        <td class="priority-edit-menu-buttons"><img id="homepageEditImg3" src="resources/images/tw_icon_editEvent.png" onmousedown="homepageEditTask(3);"></td>
+                                        <td class="priority-edit-menu-buttons"><img id="homepageDeleteImg3" src="resources/images/tw_icon_removeEvent.png" onmousedown="homepageDeleteTask(3); taskdb.webdb.deletePriorityTodo(2); pageRefreshDelete();"></td>
+                                        <td class="priority-rank">
+                                            <div id="add-star-here3">
+
+                                            </td>
+                                        </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="priorityEvent4" class="outerTaskContainer">
+                        <div class="deleteSwipeContainer">
+                            <img class="deleteSwipeIcon" src="resources/images/tw_icon_trash_Slider.png">
+                        </div>
+                        <div class="completeSwipeContainer">
+                            <img class="completeSwipeIcon" src="resources/images/tw_icon_complete_slider.png">
+                        </div>
+                        <div id="click4" class="priorityTaskContainer">
+                            <div id="color4" class="priorityTaskIcon c3">
+                                <img src="">
+                            </div>
+                            <div class="priorityTask">
+                                <table class="priority-event-title-and-course">
+                                    <tr>
+                                        <td class="priority-eventTitle"><div id="eventText4" class="textOverflow"></div></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="priority-event-time-course-day"></td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div id="extend4" class="priorityTaskContainer2">
+                            <div class="priorityTask2">
+                                <table class="priority-description-and-menu">
+                                    <tr>
+                                        <td id="color4" class="priority-task-icon c3"></td><td colspan=4 class="priority-description">
+                                        <div class="height-limiter"></div>
+                                        </td>
+                                    </tr>
+                                    <tr class="priority-edit-menu">
+                                        <td id="color4" class="priority-task-icon c3" onclick="tapSoundEffect();"></td>
+                                        <td class="priority-edit-menu-buttons"><img id="homepageDoneImg4" src="resources/images/tw_icon_completeEvent.png" onmousedown="homepageCompleteTask(4); taskdb.webdb.deletePriorityTodo(3); pageRefreshComplete();"></td>
+                                        <td class="priority-edit-menu-buttons"><img id="homepageEditImg4" src="resources/images/tw_icon_editEvent.png" onmousedown="homepageEditTask(4);"></td>
+                                        <td class="priority-edit-menu-buttons"><img id="homepageDeleteImg4" src="resources/images/tw_icon_removeEvent.png" onmousedown="homepageDeleteTask(4); taskdb.webdb.deletePriorityTodo(3); pageRefreshDelete();"></td>
+                                        <td class="priority-rank">
+                                            <div id="add-star-here4">
+
+                                            </td>
+                                        </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="priorityEvent5" class="outerTaskContainer">
+                        <div class="deleteSwipeContainer">
+                            <img class="deleteSwipeIcon" src="resources/images/tw_icon_trash_Slider.png">
+                        </div>
+                        <div class="completeSwipeContainer">
+                            <img class="completeSwipeIcon" src="resources/images/tw_icon_complete_slider.png">
+                        </div>
+                        <div id="click5" class="priorityTaskContainer">
+                            <div id="color5" class="priorityTaskIcon c4">
+                                <img src="">
+                            </div>
+                            <div class="priorityTask">
+                                <table class="priority-event-title-and-course">
+                                    <tr>
+                                        <td class="priority-eventTitle"><div id="eventText5" class="textOverflow"></div></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="priority-event-time-course-day"></td></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="extend5" class="priorityTaskContainer2">
+                    <div class="priorityTask2">
+                        <table class="priority-description-and-menu">
+                            <tr>
+                                <td id="color5" class="priority-task-icon c4"></td><td colspan=4 class="priority-description">
+                                <div class="height-limiter"></div>
+                                </td>
+                            </tr>
+                            <tr class="priority-edit-menu">
+                                <td id="color5" class="priority-task-icon c4" onclick="tapSoundEffect();"></td>
+                                <td class="priority-edit-menu-buttons"><img id="homepageDoneImg5" src="resources/images/tw_icon_completeEvent.png" onmousedown="homepageCompleteTask(5); taskdb.webdb.deletePriorityTodo(4); pageRefreshComplete();"></td>
+                                <td class="priority-edit-menu-buttons"><img id="homepageEditImg5" src="resources/images/tw_icon_editEvent.png" onmousedown="homepageEditTask(5);"></td>
+                                <td class="priority-edit-menu-buttons"><img id="homepageDeleteImg5" src="resources/images/tw_icon_removeEvent.png" onmousedown="homepageDeleteTask(5); taskdb.webdb.deletePriorityTodo(4); pageRefreshDelete();"></td>
+                                <td class="priority-rank">
+                                    <div id="add-star-here5">
+
+                                    </td>
+                                </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <br>
+        </div>
+        <!--End of Content-->
+
+    </div> 
+
+    <!---------------------------------------------------------------------------------------------------------------------------->
+
+    <!--//////////////////////////////////////  ALL EVENTS   //////////////////////////////////////////-->
+
+    <div data-role="page" id="allEvents">
+
+        <!-------------- SIDE PANEL NAVIGATION --------------->
+        <div data-role="panel" id="leftpanel2" data-position="left" data-display="push">
+
+            <!--Header-->
+            <div id="navHeader" data-position="left">
+                <div><img id="sidePanelLogo" src="resources/images/tw_icon_sidepanel_logo.png"></div>
+                <div id="title">TimeWhale</div>
+            </div>
+
+            <!--Navigation Options-->
+            <ul id="navMenu">
+                <li class="primaryNav">
+                    <a onclick="tapSoundEffect();" href="#homepage" data-transition="none"><div><img class="mainIcon" src="resources/images/tw_icon_sidepanel_home.png">Home</div></a>
+                </li>
+                <li class="primaryNav">
+                    <a onclick="tapSoundEffect();" href="#newEvent" data-transition="none"><div><img class="mainIcon" src="resources/images/tw_icon_sidepanel_add.png">Add</div></a>
+                </li>
+                <li class="primaryNav">
+                    <a id="currentlyActive" href="#allEvents"><div><img class="mainIcon" src="resources/images/tw_icon_sidepanel_viewall.png">View All Events</div></a>
+                </li>
+                <li class="secondaryNav">
+                    <a onclick="tapSoundEffect();" class="goToHelp" href="#help" data-transition="none"><div><img class="smallerIcon" src="resources/images/tw_icon_sidepanel_help.png">HELP</div></a>
+                </li>
+                <li class="secondaryNav">
+                    <a onclick="tapSoundEffect();" href="#feedback" data-transition="none"><div><img class="smallerIcon" src="resources/images/tw_icon_sidepanel_feedback.png">ABOUT / FEEDBACK</div></a>
+                </li>		
+
+                <br><br><br>
+
+                <!-- DEMO BUTTONS --> 
+                <li class="secondaryNav">
+                    <a onclick="generatePresets();" href="#" data-transition="none"><div style="text-align: center">GENERATE PRESETS</div></a>
+                </li>	
+                <li class="secondaryNav">
+                    <a onclick="clearEventDatabase(); pageRefreshComplete();"><div style="text-align: center">CLEAR EVENTS</div></a>
+                </li>
+                <li class="secondaryNav">
+                    <a onclick="clearCourseDatabase();"><div style="text-align: center">CLEAR COURSES</div></a>
+                </li>
+            </ul> 
+        </div>
+        <!--End of Panel-->
+
+        <!-- content -->
+        <div data-role="content" class="content">
+
+            <div id="allEventHeader">
+                <div><a onclick="tapSoundEffect();" href="#leftpanel2"><img id="sidePanelButton" src="resources/images/tw_icon_sidenav.png"></a></div>
+                <div>ALL EVENTS</div>
+
+                <!--Adding Events-->
+                <a href="#newEvent" onclick="tapSoundEffect();">
+                    <img id="addNewEvent" src="resources/images/tw_icon_addevent.png">
+                </a>
+            </div>
+
+
+
+            <!--Area where the divs are generated-->
+            <div id="collapsibleContent">
+                <!--data-role="collapsible-set"-->
+
+                <!--@@ DO NOT WRITE IN HERE @@-->
+
+            </div>
+
+        </div>
+        <!--End of Content-->
+    </div> 
+
+    <!---------------------------------------------------------------------------------------------------------------------------->
+
+    <!--//////////////////////////////////////  HELP   //////////////////////////////////////////-->
+
+    <!--PAGE ONE-->
+    <div data-role="page" id="help">
+        <!-- content -->
+        <div data-role="content" class="content">
+
+            <div id="helpIntro">welcome to </div>
+            <div id="helpIntroTW">TimeWhale</div>
+
+            <a onclick="tapSoundEffect();" data-transition="none" id="helpStart" href="#help1">
+                <span class="helpButton">Getting Started</span>
+            </a>
+
+            <a data-transition="none" onclick="doneHelp(); tapSoundEffect(); defaultEvent();" id="helpSkip" href="#homepage">
+                <span class="helpButton">skip</span>
+            </a>
+
+        </div>
+        <!--End of Content-->
+    </div> 
+
+
+    <!--PAGE TWO-->
+    <div data-role="page" id="help1">
+        <!-- content -->
+        <div data-role="content" class="helpContainer">
+
+            <img src="resources/help/homepage_help.jpg" class="helpInnerContainer">
+
+            <a onclick="tapSoundEffect();" data-transition="none" class="helpNext" href="#help2">
+                <span class="helpButton">next</span>
+            </a>
+            <a onclick="tapSoundEffect();" data-transition="none" class="helpBack" href="#help">
+                <span class="helpButton">back</span>
+            </a>
+
+            <div>
+                <span id="helpSelected1"></span>
+                <span id="helpLocation2"></span>
+                <span id="helpLocation3"></span>
+            </div>
+
+        </div>
+        <!--End of Content-->
+    </div> 
+
+
+    <!--PAGE THREE-->
+    <div data-role="page" id="help2">
+        <!-- content -->
+        <div data-role="content" class="helpContainer">
+
+            <img src="resources/help/addevent_help.jpg" class="helpInnerContainer">
+
+            <a onclick="tapSoundEffect();" data-transition="none" class="helpNext" href="#help3">
+                <span class="helpButton">next</span>
+            </a>
+            <a onclick="tapSoundEffect();" data-transition="none" class="helpBack" href="#help1">
+                <span class="helpButton">back</span>
+            </a>
+
+            <div>
+                <span id="helpLocation1"></span>
+                <span id="helpSelected2"></span>
+                <span id="helpLocation4"></span>
+            </div>
+
+        </div>
+        <!--End of Content-->
+    </div> 
+
+
+    <!--PAGE FOUR-->
+    <div data-role="page" id="help3">
+        <!-- content -->
+        <div data-role="content" class="helpContainer">
+
+            <img src="resources/help/eventlist_help.jpg" class="helpInnerContainer">
+
+            <a onclick="tapSoundEffect();" data-transition="none" class="helpNext" href="#help4">
+                <span class="helpButton">next</span>
+            </a>
+            <a onclick="tapSoundEffect();" data-transition="none" class="helpBack" href="#help2">
+                <span class="helpButton">back</span>
+            </a>
+
+            <div>
+                <span id="helpLocation1"></span>
+                <span id="helpLocation2"></span>
+                <span id="helpSelected3"></span>
+            </div>
+
+        </div>
+        <!--End of Content-->
+    </div>
+
+
+    <div data-role="page" id="help4">
+        <!-- content -->
+        <div data-role="content" class="content">
+
+            <div id="helpIntroEnding">Let's get<br>started.</div>
+
+
+            <a data-transiton= "none"; onclick="doneHelp(); tapSoundEffect(); defaultEvent();" class="helpNext" href="#homepage">
+                <span class="helpButton">done</span>
+            </a>
+            <a onclick="tapSoundEffect();" data-transition="none" class="helpBack" href="#help3">
+                <span class="helpButton">back</span>
+            </a>
+
+        </div>
+        <!--End of Content-->
+    </div> 
+
+    <!---------------------------------------------------------------------------------------------------------------------------->
+
+    <!--//////////////////////////////////////   ADD EVENT PAGE //////////////////////////////////////////-->
+
+    <!-- <table><tr><td><a href='index.html/#newEvent'>
+<div class='course-option' onclick='courseName=this.innerHTML;displayCourseName();'>
++ newCourseName + </div>
+</a></td><td></td></tr></table>
+-->
+    <div data-role="page" id="newEvent">
+
+        <div data-role="content" class="content">
+
+            <div id="addEventHeader">
+                <div>
+                    <a>
+                        <img onclick="previousPage(prev);" class="input-back-img" onmouseout="inputNavRolloverOff('.input-back');" onmousedown="inputNavRolloverOn('.input-back');" onmouseup="inputNavRolloverOff('.input-back');" src="resources/images/tw_icon_input_back.png">
+                    </a>
+                </div>
+                <div id="backButton" onclick="tapSoundEffect();">
+                    <div class="input-back" onclick="resetInputs(); previousPage(prev);" onmousedown="inputNavRolloverOn('.input-back');" onmouseout="inputNavRolloverOff('.input-back');" onmouseup="inputNavRolloverOff('.input-back');">BACK</div>
+                </div>
+                <div id ="saveButton" onclick="tapSoundEffect();">
+                    <div id="input-save" onclick="checkForID();" onmousedown="inputNavRolloverOn('#input-save');" onmouseout="inputNavRolloverOff('#input-save');" onmouseup="inputNavRolloverOff('#input-save');">SAVE</div>
+                </div>
+
+            </div>
+
+            <form type="post" onsubmit="addEvent(); return false;" id="inputpage">
+
+                <table style="width:100%">
+                    <col width="50px">
+                    <!-- Title Field -->
+                    <tr id="title-row">
+
+                        <td>
+                            <div class="inputicon_div">
+                                <label for="eventName">
+                                    <img id="title-img" class = "inputicon" src="resources/images/tw_icon_input_title.png" >
+                                </label>
+                            </div>
+                        </td>
+                        <td colspan="2"> 
+                            <div>
+                                <input type="text" name="eventName" id="eventName" class="grey-input-text" placeholder="Event Title (Required)" data-icon="refresh" onkeyup="saveColor(); checkTitle()">
+                            </div>
+                        </td> 
+                    </tr>
+
+                    <tr>
+                        <td colspan="3" style ="height: 25px;">
+                            <div class="android-btm-border-grey" id="title-border"></div>
+                        </td> 
+                    </tr>
+                    <tr>
+                        <!-- priority -->
+                        <td>
+                            <div class="inputicon_div">
+                                <img class = "inputicon" src="resources/images/tw_icon_input_priority.png">
+                            </div>
+                        </td>
+                        <td>
+                            <div class="blue-clickable-text">Priority</div>
+                        </td>
+                        <td style = "padding-left: 15px;">
+                            <div id="input-star-container">
+
+                                <img id="inputStar1" onclick="star1(); priority = 1; tapSoundEffect();" class = "inputicon inputstar" src="resources/images/tw_icon_input_starGrey.png">
+                                <img id="inputStar2" onclick="star2(); priority = 2; tapSoundEffect();" class = "inputicon inputstar" src="resources/images/tw_icon_input_starGrey.png">
+                                <img id="inputStar3" onclick="star3(); priority = 3; tapSoundEffect();" class = "inputicon inputstar" src="resources/images/tw_icon_input_starGrey.png">
+
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td colspan="3">
+                            <div class="priority">
+
+                            </div>
+                        </td>
+
+                    </tr>
+                    <!-- date picker -->
+                    <tr id = "dateShow" onclick="tapSoundEffect();">
+                        <td>
+                            <div class="inputicon_div">
+                                <img id="datepickericon" class = "inputicon" src="resources/images/tw_icon_input_date.png">
+
+                            </div>
+                        </td>
+                        <td colspan="2">
+                            <div>
+                                <input id="datepicker" name="datepicker" class="grey-input-text" placeholder="Date"> 
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="3">
+                            <div class="android-btm-border-grey" id="date-border"></div>
+                        </td>
+                    </tr>
+
+                    <!-- time picker -->
+                    <tr id ="show" onclick="tapSoundEffect();">
+                        <td>
+                            <div class = "inputicon_div">
+                                <img class="inputicon" src="resources/images/tw_icon_input_time.png">
+                            </div>
+                        </td>
+                        <td colspan="2">
+                            <div>
+                                <input id = "demo" class="grey-input-text" placeholder="Time">
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td colspan="3">
+                            <div class="android-btm-border-grey" id="time-border"></div>
+
+                        </td>
+                    </tr>                       
+                    <!-- courses -->
+                    <tr onclick="tapSoundEffect();">
+                        <td>
+                            <a href="#newcoursepop" data-rel="popup" data-position-to="window">
+                                <div class="inputicon_div">
+                                    <img  class = "inputicon" src="resources/images/tw_icon_input_course.png">
+                                </div>
+                            </a>
+                        </td>
+                        <td colspan="2">
+                            <div>
+
+                                <!-- select course -->			
+                                <div data-role="popup" id="newcoursepop">
+
+                                    <div id="course-container-outer">
+                                        <div id="course-container-inner">
+                                            <div id="course-header">SELECT A COURSE</div>
+                                            <table id= "courselist">
+                                                <tr>
+                                                    <td width="20px;">
+                                                        <input type="text" maxlength="15" name="newCourse" id="newCourse" placeholder="New Course" width="230px">
+                                                    </td>
+                                                    <td>
+                                                        <img id="add-course-icon" src="resources/images/input_blue_add.png" onclick="getNewCourse(); tapSoundEffect();">
+                                                    </td>
+                                                </tr>
+
+                                            </table>
+
+                                            <!-- This is where courses are added into the popup selection -->
+                                            <a id="addHere" onclick="tapSoundEffect();"></a>    
+
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <a href="#newcoursepop" data-rel="popup" data-position-to="window"><div id="coursePopupText" onmousedown="popRolloverOn('#coursePopupText');" onmouseup="popRolloverOff('#coursePopupText');" onmouseout="popRolloverOff('#coursePopupText');" class="blue-clickable-text">Select a Course</div></a>
+
+                                <!-- <a href="#coursePopup" data-rel="popup" class="poplink" ></a>
+-->
+                            </div>	
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td colspan="3"> 
+
+                            <div class="priority">
+
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- category -->
+                    <tr onclick="tapSoundEffect();">
+                        <td>
+                            <a href="#categoryPopup" data-rel="popup" >
+                                <div class = "inputicon_div">
+                                    <img  class = "inputicon" src="resources/images/tw_icon_input_category.png">
+                                </div>
+                            </a>
+                        </td>
+                        <td colspan="2">
+                            <a href="#categoryPopup" data-rel="popup" ><div id="categoryPopupText" onmousedown="popRolloverOn('#categoryPopupText');" onmouseup="popRolloverOff('#categoryPopupText');" onmouseout="popRolloverOff('#categoryPopupText');"  class="blue-clickable-text">Select a Category</div></a>					
+                            <div data-role="popup" id="categoryPopup" data-position-to="window" class="ui-content">
+                                <div id="category-header">SELECT A CATEGORY</div>
+                                <div class=ui-grid-b onclick="tapSoundEffect();">
+
+                                    <div class=ui-block-a>
+                                        <a href="index.html/#newEvent">
+                                            <div onclick="category = 1; $('#categoryPopupText').text('Reading');" id = "readingCircle" style="background-image:url('resources/images/tw_icon_reading.png')"></div>
+                                        </a>
+
+                                        <p>Reading</p>
+                                    </div>
+                                    <div class=ui-block-b>
+                                        <a href="index.html/#newEvent">
+
+                                            <div onclick="category = 2; $('#categoryPopupText').text('Project Meeting');" id = "meetingCircle" style="background-image:url('resources/images/tw_icon_pmeeting.png')"></div>
+                                        </a>
+
+                                        <p>Project Meeting</p>
+                                    </div>
+                                    <div class=ui-block-c>
+                                        <a href="index.html/#newEvent">
+
+                                            <div onclick="category = 3; $('#categoryPopupText').text('Assignment');" id = "assCircle" style="background-image:url('resources/images/tw_icon_input_assignment.png')"></div>  
+                                        </a>
+
+                                        <p>Assignment</p>
+                                    </div>
+                                </div>         
+                                <div class=ui-grid-b onclick="tapSoundEffect();">
+
+                                    <div class=ui-block-a>
+                                        <a href="index.html/#newEvent">
+
+                                            <div onclick="category = 4; $('#categoryPopupText').text('Quiz');" id = "quizCircle" style="background-image:url('resources/images/tw_icon_quiz.png')"></div>
+                                        </a>
+
+                                        <p>Quiz</p>
+                                    </div>
+                                    <div class=ui-block-b>
+                                        <a href="index.html/#newEvent">
+
+                                            <div onclick="category = 5; $('#categoryPopupText').text('Exam');" id = "examCircle" style="background-image:url('resources/images/tw_icon_exam.png')"></div>  
+                                        </a>
+
+                                        <p>Exam</p>
+                                    </div>
+                                    <div class=ui-block-c>
+                                        <a href="index.html/#newEvent">
+
+                                            <div onclick="category = 6; $('#categoryPopupText').text('Other');" id = "otherCircle" style="background-image:url('resources/images/tw_icon_input_other.png')"></div>   
+                                        </a>
+
+                                        <p>Other</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="3">
+
+                            <div class ="priority">
+
+                            </div>
+
+                        </td>
+                    </tr>
+
+
+                    <!-- description -->
+                    <tr>
+
+                        <td>
+                            <label for="details">
+                                <div class = "inputicon_div">
+
+                                    <img  class = "inputicon" src="resources/images/tw_icon_input_desc.png">
+                                </div>
+                            </label>
+                        </td>
+                        <td colspan="2">
+                            <textarea name="details" id="details" class="grey-input-text" placeholder="Description" style="resize:vertical;"></textarea>
+                        </td>
+                    </tr>
+
+                    <tr>
+
+                        <td colspan="3">
+                            <div class="android-btm-border-grey" id="description-border"></div>
+                        </td>
+                    </tr>
+                </table> 
+            </form>
+        </div>
+        <!--End of Content-->
+    </div>
+
+    <!---------------------------------------------------------------------------------------------------------------------------->
+
+    <!--//////////////////////////////////////  FEEDBACK   //////////////////////////////////////////-->
+
+    <div data-role="page" id="feedback">
+
+        <!--Content-->
+        <div data-role="content" class="content">
+
+            <div id="feedbackHeader">
+                <div>
+                    <a>
+                        <img  onclick="previousPage(prev);" class="input-back-img" onmouseout="inputNavRolloverOff('.input-back');" onmousedown="inputNavRolloverOn('.input-back');" onmouseup="inputNavRolloverOff('.input-back');" src="resources/images/tw_icon_input_back.png">
+                    </a>
+                </div>
+                <div id="backButton" onclick="tapSoundEffect();">
+                    <div class="input-back" onclick="previousPage(prev);" onmousedown="inputNavRolloverOn('.input-back');" onmouseout="inputNavRolloverOff('.input-back');" onmouseup="inputNavRolloverOff('.input-back');">BACK</div>
+                </div>
+                <div id ="saveButtonFeedback" onclick="tapSoundEffect();">
+                    <a href="mailto:lycaara@gmail.com?Subject=Hello%20again"> <div id="input-email" onmousedown="inputNavRolloverOn('#input-email');" onmouseout="inputNavRolloverOff('#input-email');" onmouseup="inputNavRolloverOff('#input-email');">EMAIL US!</div></a>
+                </div>
+            </div>
+
+            <form type="post" id="feedbackForm">      
+                <div id="feedbackDescription">Do you have any comments or suggestions? Do you have a bug to report? Please let us know!</div>
+                <div>
+                    <div id="about-us">
+                        <div class="question">
+                            Why did we choose this project?
+                        </div>
+                        <div class="answer">
+                            Time management is a challenge, especially for CST students!
+
+                        </div>
+                        <div class="question">
+                            What's special about it?                        </div>
+                        <div class="answer">
+                            We want to set our app apart by quality. Our app features a dynamic homepage that automatically prioritizes your events/tasks, displaying essential information when needed, letting you focus on your work.                            
+                        </div>
+                    </div>
+                    <div  style="text-align:center; margin-top: 32px;" id="team-profiles">
+
+                        <div id="profile-header">The TimeWhale Team</div>
+
+
+                        <div class="team-member">     
+                            <img src="resources/images/krystle.png">
+                            <div>Krystle B.</div>
+                        </div>
+
+                        <div class="team-member">     
+                            <img src="resources/images/alvin.png">
+                            <div>Alvin M.</div>
+                        </div>
+
+                        <div class="team-member">     
+                            <img src="resources/images/TWO_DUYS.png">
+                            <div>Duy L.</div>
+                        </div>                        
+                        <div class="team-member">     
+                            <img src="resources/images/oscar.png">
+                            <div>Oscar K.</div>
+                        </div>
+
+                        <div class="team-member">     
+                            <img src="resources/images/sean.png">
+                            <div>Sean A.</div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </body>
+</html>
